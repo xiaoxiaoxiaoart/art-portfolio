@@ -29,23 +29,6 @@ function ymEn(d: Date) {
 <BaseLayout title="事件">
   <div class="events-page">
 
-    {exhibitions.length > 0 && (
-      <section class="type-section">
-        <h2 class="type-heading">展覽 Exhibitions</h2>
-        {Object.entries(eByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, evts]) => (
-          <div class="year-group">
-            <div class="year-label">{year}</div>
-            {evts.map(e => (
-              <div class="event-item">
-                {e.data.title} / {e.data.title_en || e.data.title}
-                <span class="meta"> &mdash; {e.data.venue_en || e.data.venue}, {e.data.city_en || e.data.city}, {ymEn(e.data.date_start)}</span>
-              </div>
-            ))}
-          </div>
-        ))}
-      </section>
-    )}
-
     {performances.length > 0 && (
       <section class="type-section">
         <h2 class="type-heading">演出 Performances</h2>
@@ -66,6 +49,23 @@ function ymEn(d: Date) {
                 )}
               </div>
             )})}
+          </div>
+        ))}
+      </section>
+    )}
+
+    {exhibitions.length > 0 && (
+      <section class="type-section">
+        <h2 class="type-heading">展覽 Exhibitions</h2>
+        {Object.entries(eByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, evts]) => (
+          <div class="year-group">
+            <div class="year-label">{year}</div>
+            {evts.map(e => (
+              <div class="event-item">
+                {e.data.title} / {e.data.title_en || e.data.title}
+                <span class="meta"> &mdash; {e.data.venue_en || e.data.venue}, {e.data.city_en || e.data.city}, {ymEn(e.data.date_start)}</span>
+              </div>
+            ))}
           </div>
         ))}
       </section>
