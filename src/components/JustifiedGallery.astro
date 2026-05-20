@@ -108,7 +108,8 @@ const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
           if(linkMode==='lightbox'){
             if(flatLightbox)flatLightbox.push(p);
             (function(idx){img.addEventListener('click',function(){openLightbox(flatLightbox||[p],idx)})})(flatIdx++);
-            img.style.cursor='zoom-in'
+            img.style.cursor='zoom-in';
+            div.appendChild(img)
           }else if(linkMode==='series'&&p.seriesSlug){
             var a=document.createElement('a');a.href='/series/'+encodeURIComponent(p.seriesSlug)+'/';a.style.cssText='display:block;flex-shrink:0';a.appendChild(img);div.appendChild(a)
           }else if(p.slug){
