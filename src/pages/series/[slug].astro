@@ -9,10 +9,22 @@ export async function getStaticPaths() {
   return series.map(s => ({ params: { slug: s.slug } }));
 }
 
+function splitTitle(title: string) {
+  const idx = title.search(/[A-Z]/);
+  if (idx < 0) return { cn: title, en: '' };
+  return { cn: title.slice(0, idx).trim(), en: title.slice(idx).trim() };
+}
+
 const { slug } = Astro.params;
 const allSeries = await getCollection('series');
 const currentSeries = allSeries.find(s => s.slug === slug);
 if (!currentSeries) throw new Error(`找不到系列: ${slug}`);
+
+const titleParts = splitTitle(currentSeries.data.title);
+const descRaw = currentSeries.data.description || '';
+const descParts = descRaw.split(/\n\n+/);
+const descCn = descParts[0] || '';
+const descEn = descParts.slice(1).join('\n\n') || '';
 
 const allWorks = await getCollection('works');
 const seriesWorks = allWorks
@@ -38,9 +50,15 @@ const photos = await Promise.all(
 ---
 
 <BaseLayout title={currentSeries.data.title}>
-  <h2 class="series-title">{currentSeries.data.title}</h2>
-  {currentSeries.data.description && (
-    <p class="series-desc">{currentSeries.data.description}</p>
+  <h2 class="series-title">
+    <span class="title-cn">{titleParts.cn}</span>
+    {titleParts.en && <span class="title-en">{titleParts.en}</span>}
+  </h2>
+  {descCn && (
+    <div class="series-desc">
+      <div class="desc-cn">{descCn}</div>
+      {descEn && <div class="desc-en">{descEn}</div>}
+    </div>
   )}
   <JustifiedGallery photos={photos} shuffle={false} linkMode="lightbox" targetHeight={230} />
   <a href="/series/" class="back-link">&larr; 全部作品</a>
@@ -48,17 +66,41 @@ const photos = await Promise.all(
 
 <style>
   .series-title {
+    margin-bottom: 8px;
+  }
+  .title-cn {
+    display: block;
     font-size: 18px;
     font-weight: 400;
     color: #111;
-    margin-bottom: 8px;
+  }
+  .title-en {
+    display: block;
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 2px;
   }
   .series-desc {
-    font-size: 13px;
-    color: var(--text-muted);
+    display: flex;
+    gap: 36px;
     margin-bottom: 28px;
-    max-width: 500px;
-    line-height: 1.6;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-muted);
+  }
+  .desc-cn {
+    flex: 1;
+    min-width: 0;
+  }
+  .desc-en {
+    flex: 1;
+    min-width: 0;
+  }
+  @media (max-width: 700px) {
+    .series-desc {
+      flex-direction: column;
+      gap: 16px;
+    }
   }
   .back-link {
     display: inline-block;

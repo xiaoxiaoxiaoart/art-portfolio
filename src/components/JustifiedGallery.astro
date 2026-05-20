@@ -130,11 +130,17 @@ const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
   }
 
   document.querySelectorAll('.gallery-wrapper').forEach(function(el){
-    var ticking=false;
-    var ro=new ResizeObserver(function(){if(!ticking){ticking=true;requestAnimationFrame(function(){render(el);ticking=false})}});
-    ro.observe(el);
-    var onResize=function(){if(!ticking){ticking=true;requestAnimationFrame(function(){render(el);ticking=false})}};
-    window.addEventListener('resize',onResize);
+    var lastWidth=0;
+    var timer=0;
+    function scheduleRender(){
+      var w=el.clientWidth;
+      if(w===lastWidth)return;
+      lastWidth=w;
+      clearTimeout(timer);
+      timer=setTimeout(function(){render(el)},80)
+    }
+    new ResizeObserver(scheduleRender).observe(el);
+    window.addEventListener('resize',scheduleRender);
     render(el)
   })
 })();
