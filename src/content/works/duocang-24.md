@@ -1,5 +1,5 @@
 ---
-title: "霧燈"
+title: "雾灯"
 series: "躲藏在你的阴影里"
 images:
   - "../../assets/images/duocang-24.jpg"

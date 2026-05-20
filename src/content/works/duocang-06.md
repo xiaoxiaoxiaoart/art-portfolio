@@ -1,5 +1,5 @@
 ---
-title: "樹眼"
+title: "树眼"
 series: "躲藏在你的阴影里"
 images:
   - "../../assets/images/duocang-06.jpg"

@@ -1,5 +1,5 @@
 ---
-title: "樓格"
+title: "楼格"
 series: "躲藏在你的阴影里"
 images:
   - "../../assets/images/duocang-20.jpg"

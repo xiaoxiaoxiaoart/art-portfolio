@@ -1,5 +1,5 @@
 ---
-title: "紋"
+title: "纹"
 series: "躲藏在你的阴影里"
 images:
   - "../../assets/images/duocang-28.jpg"
