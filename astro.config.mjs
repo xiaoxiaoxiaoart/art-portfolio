@@ -1,6 +1,9 @@
 import { defineConfig } from 'astro/config';
 
+import cloudflare from "@astrojs/cloudflare";
+
 export default defineConfig({
   site: 'https://xiao-yu.vercel.app',
-  output: 'static'
+  output: 'static',
+  adapter: cloudflare()
 });
