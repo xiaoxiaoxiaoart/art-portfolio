@@ -15,12 +15,12 @@ const photos = await Promise.all(
       src: optimized.src,
       w: img.width,
       h: img.height,
-      slug: w.slug
+      seriesSlug: w.data.series
     };
   })
 );
 ---
 
 <BaseLayout>
-  <JustifiedGallery photos={photos} shuffle={true} />
+  <JustifiedGallery photos={photos} shuffle={true} linkMode="series" />
 </BaseLayout>

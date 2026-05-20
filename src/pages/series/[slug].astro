@@ -22,12 +22,16 @@ const seriesWorks = allWorks
 const photos = await Promise.all(
   seriesWorks.map(async (w) => {
     const img = w.data.images[0];
-    const optimized = await getImage({ src: img, width: 1200 });
+    const [thumb, full] = await Promise.all([
+      getImage({ src: img, width: 1200 }),
+      getImage({ src: img, width: 2400 })
+    ]);
     return {
-      src: optimized.src,
+      src: thumb.src,
+      fullSrc: full.src,
       w: img.width,
       h: img.height,
-      slug: w.slug
+      title: w.data.title
     };
   })
 );
@@ -38,7 +42,7 @@ const photos = await Promise.all(
   {currentSeries.data.description && (
     <p class="series-desc">{currentSeries.data.description}</p>
   )}
-  <JustifiedGallery photos={photos} shuffle={false} />
+  <JustifiedGallery photos={photos} shuffle={false} linkMode="lightbox" />
   <a href="/series/" class="back-link">&larr; 全部作品</a>
 </BaseLayout>
 
