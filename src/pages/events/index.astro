@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { getImage } from 'astro:assets';
 
 const allEvents = await getCollection('events');
 allEvents.sort((a, b) => b.data.date_start.getTime() - a.data.date_start.getTime());
@@ -21,107 +20,117 @@ const exhibitions = allEvents.filter(e => e.data.type === 'exhibition');
 const pByYear = groupByYear(performances);
 const eByYear = groupByYear(exhibitions);
 
-const eventsWithPreviews = await Promise.all(
-  allEvents.map(async (e) => {
-    if (!e.data.preview_image) return { slug: e.slug, previewSrc: '' };
-    const img = await getImage({ src: e.data.preview_image, width: 500 });
-    return { slug: e.slug, previewSrc: img.src };
-  })
-);
-const previewMap = new Map(eventsWithPreviews.map(e => [e.slug, e.previewSrc]));
+function ym(d: Date) {
+  return d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'short' });
+}
 
-const typeLabel: Record<string, string> = { performance: '演出', exhibition: '展覽' };
+function ymEn(d: Date) {
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  return `${m} ${d.getFullYear()}`;
+}
 ---
 
 <BaseLayout title="事件">
   <div class="events-page">
-    <div class="events-list">
-      {exhibitions.length > 0 && (
-        <div class="type-section">
-          <h2 class="type-heading">展覽</h2>
-          {Object.entries(eByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, evts]) => (
-            <div class="year-group">
-              <div class="year-label">{year}</div>
-              {evts.map(e => (
-                <div
-                  class:list={["event-item", { "has-detail": e.data.has_detail }]}
-                  data-event-preview={previewMap.get(e.slug) || ''}
-                >
-                  &bull; {e.data.title} &mdash; {e.data.venue}, {e.data.city} &mdash;
-                  {e.data.date_start.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
-                  {e.data.date_end && ` &ndash; ${e.data.date_end.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', year: 'numeric' })}`}
-                  {!e.data.date_end && ` ${e.data.date_start.getFullYear()}`}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
 
-      {performances.length > 0 && (
-        <div class="type-section">
-          <h2 class="type-heading">演出</h2>
-          {Object.entries(pByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, evts]) => (
-            <div class="year-group">
-              <div class="year-label">{year}</div>
-              {evts.map(e => (
-                <div
-                  class:list={["event-item", { "has-detail": e.data.has_detail }]}
-                  data-event-preview={previewMap.get(e.slug) || ''}
-                >
-                  &bull; {e.data.title} &mdash; {e.data.venue}, {e.data.city} &mdash;
-                  {e.data.date_start.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
-                  {e.data.date_end && ` &ndash; ${e.data.date_end.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', year: 'numeric' })}`}
-                  {!e.data.date_end && ` ${e.data.date_start.getFullYear()}`}
+    {exhibitions.length > 0 && (
+      <section class="type-section">
+        <h2 class="type-heading">展覽 Exhibitions</h2>
+        {Object.entries(eByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, evts]) => (
+          <div class="year-group">
+            <div class="year-label">{year}</div>
+            {evts.map(e => (
+              <div class="event-row">
+                <div class="col-cn">
+                  {e.data.title}
+                  <span class="meta"> &mdash; {e.data.venue}，{e.data.city}，{ym(e.data.date_start)}</span>
                 </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
+                <div class="col-en">
+                  {(e.data.title_en || e.data.title)}
+                  <span class="meta"> &mdash; {e.data.venue_en || e.data.venue}, {e.data.city_en || e.data.city}, {ymEn(e.data.date_start)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </section>
+    )}
 
-      {allEvents.length === 0 && (
-        <p class="empty">暫無事件</p>
-      )}
-    </div>
-    <div class="preview-panel"></div>
+    {performances.length > 0 && (
+      <section class="type-section">
+        <h2 class="type-heading">演出 Performances</h2>
+        {Object.entries(pByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, evts]) => (
+          <div class="year-group">
+            <div class="year-label">{year}</div>
+            {evts.map(e => (
+              <div class="event-row">
+                <div class="col-cn">
+                  {e.data.title}
+                  <span class="meta"> &mdash; {e.data.city}，{ym(e.data.date_start)}</span>
+                </div>
+                <div class="col-en">
+                  {e.data.title_en || e.data.title}
+                  <span class="meta"> &mdash; {e.data.city_en || e.data.city}, {ymEn(e.data.date_start)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </section>
+    )}
+
+    {allEvents.length === 0 && (
+      <p class="empty">暫無事件</p>
+    )}
   </div>
 </BaseLayout>
 
-<script>
-  import { initEventPreviews } from '../../scripts/events';
-  initEventPreviews();
-</script>
-
 <style>
-  .events-page { display: flex; gap: 40px; }
-  .events-list { flex: 1; max-width: 500px; }
-  .type-section { margin-bottom: 40px; }
+  .events-page {
+    max-width: 900px;
+  }
+  .type-section {
+    margin-bottom: 48px;
+  }
   .type-heading {
     font-size: 16px; font-weight: 400; color: #111;
-    margin-bottom: 16px; letter-spacing: 0.03em;
+    margin-bottom: 18px; letter-spacing: 0.03em;
   }
-  .year-group { margin-bottom: 24px; }
+  .year-group {
+    margin-bottom: 22px;
+  }
   .year-label {
     font-size: 13px; color: #aaa;
     margin-bottom: 8px; letter-spacing: 0.05em;
   }
-  .event-item {
-    font-size: 13px; padding: 5px 0;
-    color: var(--text-secondary); line-height: 1.6;
-    cursor: default; transition: color 0.15s;
+  .event-row {
+    display: flex;
+    gap: 28px;
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 3px 0;
   }
-  .event-item:hover { color: #111; }
-  .event-item.has-detail { cursor: pointer; }
-  .event-item.has-detail:hover { text-decoration: underline; }
-  .empty { font-size: 13px; color: var(--text-muted); }
-  .preview-panel { width: 340px; flex-shrink: 0; position: relative; }
-  .preview-panel img {
-    max-width: 100%; max-height: 380px; display: block;
-    position: absolute; opacity: 0; transition: opacity 0.2s;
+  .col-cn {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-secondary);
   }
-  @media (max-width: 800px) {
-    .preview-panel { display: none; }
-    .events-list { max-width: none; }
+  .col-en {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-muted);
+  }
+  .meta {
+    color: var(--text-muted);
+  }
+  .empty {
+    font-size: 13px; color: var(--text-muted);
+  }
+  @media (max-width: 700px) {
+    .event-row {
+      flex-direction: column;
+      gap: 0;
+      margin-bottom: 8px;
+    }
   }
 </style>
