@@ -1,23 +1,47 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getEntry } from 'astro:content';
+import { getImage } from 'astro:assets';
+import portrait from '../assets/images/xiao-portrait.jpg';
 
 const about = await getEntry('pages', 'about');
 const { Content } = await about!.render();
+const optimizedPortrait = await getImage({ src: portrait, width: 600 });
 ---
 
 <BaseLayout title="關於">
-  <div class="about-text">
-    <Content />
+  <div class="about-page">
+    <div class="about-text">
+      <Content />
+    </div>
+    <div class="about-portrait">
+      <img src={optimizedPortrait.src} alt="Xiao Yu" loading="lazy" />
+    </div>
   </div>
 </BaseLayout>
 
 <style>
+  .about-page {
+    display: flex;
+    gap: 48px;
+    align-items: flex-start;
+  }
   .about-text {
+    flex: 1;
     max-width: 780px;
     font-size: 14px;
     line-height: 1.9;
     color: #444;
+    min-width: 0;
+  }
+  .about-portrait {
+    flex-shrink: 0;
+    width: 280px;
+  }
+  .about-portrait img {
+    width: 100%;
+    height: auto;
+    display: block;
   }
   .about-text :global(p) {
     margin-bottom: 20px;
@@ -33,5 +57,14 @@ const { Content } = await about!.render();
   .about-text :global(a:hover) {
     color: #111;
     text-decoration: underline;
+  }
+  @media (max-width: 800px) {
+    .about-page {
+      flex-direction: column-reverse;
+      gap: 28px;
+    }
+    .about-portrait {
+      width: 200px;
+    }
   }
 </style>
