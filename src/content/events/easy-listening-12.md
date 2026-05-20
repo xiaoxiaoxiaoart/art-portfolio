@@ -1,5 +1,5 @@
 ---
-title: "輕音樂 Vol.12"
+title: "轻松听 Vol.12"
 title_en: "Easy Listening Vol.12"
 venue: "—"
 city: "廣州"

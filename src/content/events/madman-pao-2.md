@@ -1,5 +1,5 @@
 ---
-title: "狂人炮"
+title: "狂人报"
 title_en: "Madman Pao"
 venue: "—"
 city: "廣州"

@@ -1,5 +1,5 @@
 ---
-title: "本覺音樂節"
+title: "崩决音乐节"
 title_en: "Bengjue Music Festival"
 venue: "—"
 city: "清遠"

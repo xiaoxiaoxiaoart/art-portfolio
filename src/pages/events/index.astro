@@ -62,18 +62,30 @@ function ymEn(d: Date) {
         {Object.entries(pByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, evts]) => (
           <div class="year-group">
             <div class="year-label">{year}</div>
-            {evts.map(e => (
-              <div class="event-row">
-                <div class="col-cn">
-                  {e.data.title}
-                  <span class="meta"> &mdash; {e.data.city}，{ym(e.data.date_start)}</span>
+            {evts.map(e => {
+              const lineupParts = (e.data.detail_content || '').split(' / ');
+              const lineupCn = lineupParts[0] || '';
+              const lineupEn = lineupParts.slice(1).join(' / ') || '';
+              return (
+              <div class="event-block">
+                <div class="event-row">
+                  <div class="col-cn">
+                    {e.data.title}
+                    <span class="meta"> &mdash; {e.data.city}，{ym(e.data.date_start)}</span>
+                  </div>
+                  <div class="col-en">
+                    {e.data.title_en || e.data.title}
+                    <span class="meta"> &mdash; {e.data.city_en || e.data.city}, {ymEn(e.data.date_start)}</span>
+                  </div>
                 </div>
-                <div class="col-en">
-                  {e.data.title_en || e.data.title}
-                  <span class="meta"> &mdash; {e.data.city_en || e.data.city}, {ymEn(e.data.date_start)}</span>
-                </div>
+                {lineupCn && (
+                  <div class="event-row lineup">
+                    <div class="col-cn">{lineupCn}</div>
+                    <div class="col-en">{lineupEn}</div>
+                  </div>
+                )}
               </div>
-            ))}
+            )})}
           </div>
         ))}
       </section>
@@ -103,12 +115,20 @@ function ymEn(d: Date) {
     font-size: 13px; color: #aaa;
     margin-bottom: 8px; letter-spacing: 0.05em;
   }
+  .event-block {
+    margin-bottom: 12px;
+  }
   .event-row {
     display: flex;
     gap: 28px;
     font-size: 13px;
     line-height: 1.7;
-    padding: 3px 0;
+    padding: 2px 0;
+  }
+  .event-row.lineup {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.6;
   }
   .col-cn {
     flex: 1;

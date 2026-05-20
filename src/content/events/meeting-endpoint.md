@@ -1,5 +1,5 @@
 ---
-title: "終點相遇"
+title: "端点音乐节"
 title_en: "Meeting at the Endpoint"
 venue: "—"
 city: "佛山"

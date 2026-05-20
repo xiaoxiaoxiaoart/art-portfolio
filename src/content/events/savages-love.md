@@ -1,5 +1,5 @@
 ---
-title: "野蠻人也有愛"
+title: "野人也有爱"
 title_en: "Savages Also Have Love"
 venue: "—"
 city: "廣州"
