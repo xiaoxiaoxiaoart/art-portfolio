@@ -1,14 +1,16 @@
 ---
 const nav = [
-  { label: 'Works', href: '/series/' },
-  { label: 'Events', href: '/events/' },
-  { label: 'About', href: '/about/' },
+  { label: '系列', href: '/series/' },
+  { label: '事件', href: '/events/' },
+  { label: '關於', href: '/about/' },
 ];
-const artist = 'Xiao Yu';
 ---
 
 <aside class="sidebar">
-  <a href="/" class="artist-name">{artist}</a>
+  <a href="/" class="artist-name">
+    <span class="name-en">xiao</span>
+    <span class="name-cn">蕭愚</span>
+  </a>
   <nav>
     {nav.map(item => (
       <a
@@ -31,11 +33,21 @@ const artist = 'Xiao Yu';
     gap: 6px;
   }
   .artist-name {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 28px;
+    line-height: 1.3;
+  }
+  .name-en {
     font-size: 15px;
     color: #111;
-    margin-bottom: 28px;
     letter-spacing: 0.02em;
-    display: block;
+  }
+  .name-cn {
+    font-size: 15px;
+    color: #111;
+    letter-spacing: 0.05em;
   }
   .artist-name:hover { opacity: 0.7; }
   .nav-link {
@@ -60,6 +72,8 @@ const artist = 'Xiao Yu';
     .artist-name {
       margin-bottom: 0;
       margin-right: auto;
+      flex-direction: row;
+      gap: 6px;
     }
     nav {
       display: flex;

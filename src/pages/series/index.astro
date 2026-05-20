@@ -18,7 +18,7 @@ const seriesWithCovers = await Promise.all(
 );
 ---
 
-<BaseLayout title="Works">
+<BaseLayout title="作品">
   <div class="series-grid">
     {seriesWithCovers.map(s => (
       <a href={`/series/${s.slug}/`} class="series-card">

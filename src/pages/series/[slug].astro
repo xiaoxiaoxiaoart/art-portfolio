@@ -12,7 +12,7 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 const allSeries = await getCollection('series');
 const currentSeries = allSeries.find(s => s.slug === slug);
-if (!currentSeries) throw new Error(`Series not found: ${slug}`);
+if (!currentSeries) throw new Error(`找不到系列: ${slug}`);
 
 const allWorks = await getCollection('works');
 const seriesWorks = allWorks
@@ -39,7 +39,7 @@ const photos = await Promise.all(
     <p class="series-desc">{currentSeries.data.description}</p>
   )}
   <JustifiedGallery photos={photos} shuffle={false} />
-  <a href="/series/" class="back-link">&larr; All works</a>
+  <a href="/series/" class="back-link">&larr; 全部作品</a>
 </BaseLayout>
 
 <style>

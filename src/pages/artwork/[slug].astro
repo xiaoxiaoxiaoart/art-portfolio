@@ -11,7 +11,7 @@ export async function getStaticPaths() {
 const { slug } = Astro.params;
 const allWorks = await getCollection('works');
 const work = allWorks.find(w => w.slug === slug);
-if (!work) throw new Error(`Artwork not found: ${slug}`);
+if (!work) throw new Error(`找不到作品: ${slug}`);
 
 const { title, year, medium, dimensions, description, series: seriesSlug, images } = work.data;
 
@@ -34,7 +34,7 @@ const next = currentIdx < seriesWorks.length - 1 ? seriesWorks[currentIdx + 1] :
       {optimizedImages.map((img, i) => (
         <img
           src={img.src}
-          alt={`${title} — image ${i + 1}`}
+          alt={`${title} — 圖像 ${i + 1}`}
           loading={i === 0 ? 'eager' : 'lazy'}
           class="artwork-img"
         />
@@ -50,9 +50,9 @@ const next = currentIdx < seriesWorks.length - 1 ? seriesWorks[currentIdx + 1] :
     </div>
 
     <nav class="artwork-nav">
-      {prev ? <a href={`/artwork/${prev.slug}/`}>&larr; Previous</a> : <span />}
-      <a href={`/series/${seriesSlug}/`}>All in series</a>
-      {next ? <a href={`/artwork/${next.slug}/`}>Next &rarr;</a> : <span />}
+      {prev ? <a href={`/artwork/${prev.slug}/`}>&larr; 上一張</a> : <span />}
+      <a href={`/series/${seriesSlug}/`}>系列全部</a>
+      {next ? <a href={`/artwork/${next.slug}/`}>下一張 &rarr;</a> : <span />}
     </nav>
   </div>
 </BaseLayout>

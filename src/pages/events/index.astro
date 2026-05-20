@@ -22,7 +22,7 @@ const eventsWithPreviews = await Promise.all(
 const previewMap = new Map(eventsWithPreviews.map(e => [e.slug, e.previewSrc]));
 ---
 
-<BaseLayout title="Events">
+<BaseLayout title="事件">
   <div class="events-page">
     <div class="events-list">
       {Object.entries(eventsByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, evts]) => (
@@ -34,8 +34,8 @@ const previewMap = new Map(eventsWithPreviews.map(e => [e.slug, e.previewSrc]));
               data-event-preview={previewMap.get(e.slug) || ''}
             >
               &bull; {e.data.title} &mdash; {e.data.venue}, {e.data.city} &mdash;
-              {e.data.date_start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              {e.data.date_end && ` &ndash; ${e.data.date_end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+              {e.data.date_start.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
+              {e.data.date_end && ` &ndash; ${e.data.date_end.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', year: 'numeric' })}`}
               {!e.data.date_end && ` ${e.data.date_start.getFullYear()}`}
             </div>
           ))}
