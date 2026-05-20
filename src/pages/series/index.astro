@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import JustifiedGallery from '../../components/JustifiedGallery.astro';
 import { getCollection } from 'astro:content';
 import { getImage } from 'astro:assets';
 
@@ -16,59 +15,72 @@ function splitTitle(title: string) {
 const seriesWithCovers = await Promise.all(
   allSeries.map(async (s) => {
     const cover = s.data.cover_image;
-    const optimized = await getImage({ src: cover, width: 1200 });
+    const optimized = await getImage({ src: cover, width: 800 });
     return {
       slug: s.slug,
       src: optimized.src,
-      w: cover.width,
-      h: cover.height,
       ...splitTitle(s.data.title),
     };
   })
 );
-
-const galleryPhotos = seriesWithCovers.map(s => ({
-  src: s.src,
-  w: s.w,
-  h: s.h,
-  seriesSlug: s.slug,
-}));
 ---
 
 <BaseLayout title="作品">
-  <JustifiedGallery photos={galleryPhotos} shuffle={false} linkMode="series" />
-  <div class="series-links">
+  <div class="series-grid">
     {seriesWithCovers.map(s => (
-      <a href={`/series/${s.slug}/`} class="series-link-item">
-        <span class="sl-cn">{s.cn}</span>
-        {s.en && <span class="sl-en">{s.en}</span>}
+      <a href={`/series/${s.slug}/`} class="series-card">
+        <img src={s.src} alt={s.cn} loading="lazy" />
+        <div class="name">
+          <span class="name-cn">{s.cn}</span>
+          {s.en && <span class="name-en">{s.en}</span>}
+        </div>
       </a>
     ))}
   </div>
 </BaseLayout>
 
 <style>
-  .series-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 24px;
-    margin-top: 32px;
+  .series-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px 24px;
+    width: 100%;
   }
-  .series-link-item {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
+  .series-card {
+    display: block;
   }
-  .sl-cn {
-    font-size: 14px;
+  .series-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: opacity 0.2s;
+  }
+  .series-card:hover img {
+    opacity: 0.85;
+  }
+  .name {
+    margin-top: 10px;
+    text-align: center;
+  }
+  .name-cn {
+    display: block;
+    font-size: 15px;
     color: var(--text-secondary);
   }
-  .sl-en {
+  .name-en {
+    display: block;
     font-size: 12px;
     color: var(--text-muted);
+    margin-top: 2px;
   }
-  .series-link-item:hover .sl-cn,
-  .series-link-item:hover .sl-en {
+  .series-card:hover .name-cn,
+  .series-card:hover .name-en {
     color: #111;
+  }
+  @media (max-width: 900px) {
+    .series-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .series-grid { grid-template-columns: 1fr; }
   }
 </style>
