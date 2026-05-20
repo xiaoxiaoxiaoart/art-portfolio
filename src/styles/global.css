@@ -1,23 +1,9 @@
-/* Sarasa Fixed Slab SC — web fonts */
-@font-face {
-  font-family: 'Sarasa Fixed Slab SC';
-  src: url('/fonts/sarasafixedslabsc-extralight.woff2') format('woff2');
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-}
+/* Sarasa Fixed Slab SC — ExtraLight Italic */
 @font-face {
   font-family: 'Sarasa Fixed Slab SC';
   src: url('/fonts/sarasafixedslabsc-extralightitalic.woff2') format('woff2');
   font-weight: 200;
   font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Sarasa Fixed Slab SC';
-  src: url('/fonts/sarasafixedslabsc-regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
   font-display: swap;
 }
 
@@ -40,16 +26,10 @@
 html, body {
   font-family: 'Sarasa Fixed Slab SC', monospace;
   font-weight: 200;
+  font-style: italic;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
-}
-
-h1, h2, h3, h4 {
-  font-weight: 400;
-}
-em, i {
-  font-style: italic;
 }
 
 a {
