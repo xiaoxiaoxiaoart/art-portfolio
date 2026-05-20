@@ -130,9 +130,12 @@ const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
   }
 
   document.querySelectorAll('.gallery-wrapper').forEach(function(el){
-    render(el);
-    new ResizeObserver(function(){render(el)}).observe(el);
-    window.addEventListener('resize',function(){render(el)})
+    var ticking=false;
+    var ro=new ResizeObserver(function(){if(!ticking){ticking=true;requestAnimationFrame(function(){render(el);ticking=false})}});
+    ro.observe(el);
+    var onResize=function(){if(!ticking){ticking=true;requestAnimationFrame(function(){render(el);ticking=false})}};
+    window.addEventListener('resize',onResize);
+    render(el)
   })
 })();
 </script>
