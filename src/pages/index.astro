@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import JustifiedGallery from '../components/JustifiedGallery.astro';
+import { getCollection } from 'astro:content';
+import { getImage } from 'astro:assets';
+
+const allWorks = await getCollection('works');
+const featured = allWorks.filter(w => w.data.featured);
+
+const photos = await Promise.all(
+  featured.map(async (w) => {
+    const img = w.data.images[0];
+    const optimized = await getImage({ src: img, width: 1200 });
+    return {
+      src: optimized.src,
+      w: img.width,
+      h: img.height,
+      slug: w.slug
+    };
+  })
+);
+---
+
+<BaseLayout>
+  <JustifiedGallery photos={photos} shuffle={true} />
+</BaseLayout>

@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { getImage } from 'astro:assets';
+
+const allSeries = await getCollection('series');
+allSeries.sort((a, b) => a.data.order - b.data.order);
+
+const seriesWithCovers = await Promise.all(
+  allSeries.map(async (s) => {
+    const cover = await getImage({ src: s.data.cover_image, width: 800, height: 600 });
+    return {
+      slug: s.slug,
+      title: s.data.title,
+      coverSrc: cover.src
+    };
+  })
+);
+---
+
+<BaseLayout title="Works">
+  <div class="series-grid">
+    {seriesWithCovers.map(s => (
+      <a href={`/series/${s.slug}/`} class="series-card">
+        <div class="cover">
+          <img src={s.coverSrc} alt={s.title} loading="lazy" />
+        </div>
+        <div class="name">{s.title}</div>
+      </a>
+    ))}
+  </div>
+</BaseLayout>
+
+<style>
+  .series-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    width: 100%;
+    max-width: 900px;
+  }
+  .series-card { display: block; }
+  .cover {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #eee;
+  }
+  .cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s;
+  }
+  .series-card:hover .cover img { transform: scale(1.03); }
+  .name {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    text-align: center;
+  }
+  @media (max-width: 900px) { .series-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .series-grid { grid-template-columns: 1fr; } }
+</style>

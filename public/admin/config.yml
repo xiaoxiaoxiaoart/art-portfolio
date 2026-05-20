@@ -1,0 +1,59 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "src/assets/images"
+public_folder: "/src/assets/images"
+
+collections:
+  - name: "pages"
+    label: "Pages"
+    files:
+      - name: "about"
+        label: "About Page"
+        file: "src/content/pages/about.md"
+        fields:
+          - { name: "title", label: "Title", widget: "string" }
+          - { name: "body", label: "Content", widget: "markdown" }
+
+  - name: "works"
+    label: "Works"
+    folder: "src/content/works"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { name: "title", label: "Title", widget: "string" }
+      - { name: "series", label: "Series", widget: "relation", collection: "series", search_fields: ["title"], value_field: "{{slug}}", display_fields: ["title"] }
+      - { name: "images", label: "Images", widget: "image", multiple: true, media_library: { config: { multiple: true } } }
+      - { name: "year", label: "Year", widget: "number", required: false }
+      - { name: "medium", label: "Medium", widget: "string", required: false }
+      - { name: "dimensions", label: "Dimensions", widget: "string", required: false }
+      - { name: "description", label: "Description", widget: "markdown", required: false }
+      - { name: "featured", label: "Show on homepage", widget: "boolean", default: false }
+      - { name: "order", label: "Order", widget: "number", default: 0 }
+
+  - name: "series"
+    label: "Series"
+    folder: "src/content/series"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { name: "title", label: "Title", widget: "string" }
+      - { name: "description", label: "Description", widget: "markdown", required: false }
+      - { name: "cover_image", label: "Cover Image", widget: "image" }
+      - { name: "order", label: "Order", widget: "number", default: 0 }
+
+  - name: "events"
+    label: "Events"
+    folder: "src/content/events"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { name: "title", label: "Title", widget: "string" }
+      - { name: "venue", label: "Venue", widget: "string" }
+      - { name: "city", label: "City", widget: "string" }
+      - { name: "date_start", label: "Start Date", widget: "date" }
+      - { name: "date_end", label: "End Date", widget: "date", required: false }
+      - { name: "preview_image", label: "Preview Image", widget: "image", required: false }
+      - { name: "has_detail", label: "Has Detail Page", widget: "boolean", default: false }
+      - { name: "detail_content", label: "Detail Content", widget: "markdown", required: false }

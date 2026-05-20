@@ -1,0 +1,79 @@
+---
+import type { Photo } from '../scripts/justified';
+
+interface Props {
+  photos: Photo[];
+  shuffle?: boolean;
+}
+
+const { photos, shuffle = false } = Astro.props;
+const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
+---
+
+<div class="gallery-wrapper" id={id} data-shuffle={String(shuffle)}>
+  <div class="gallery-inner" data-photos={JSON.stringify(photos)}></div>
+</div>
+
+<script is:inline>
+  // Inlined justified gallery renderer. Data passed via data attributes.
+  (function(){
+    const TARGET = 130, GAP = 12;
+
+    function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+
+    function size(p){const r=p.w/p.h;return r>1?{w:TARGET,h:Math.round(TARGET/r)}:{w:Math.round(TARGET*r),h:TARGET}}
+
+    function build(photos,cw,doShuffle){
+      const items=doShuffle?shuffle(photos):[...photos];
+      const rows=[];let cur=[],cwid=0;
+      for(const p of items){
+        const s=size(p);
+        const need=cwid+s.w+(cur.length>0?GAP:0);
+        if(need<=cw||cur.length===0){cur.push({...p,dispW:s.w,dispH:s.h});cwid=need}
+        else{
+          const tg=(cur.length-1)*GAP;
+          const scale=(cw-tg)/(cwid-tg);
+          rows.push({photos:cur.map(x=>({...x,dispW:Math.round(x.dispW*scale),dispH:Math.round(x.dispH*scale)})),height:Math.round(TARGET*scale)});
+          cur=[{...p,dispW:s.w,dispH:s.h}];cwid=s.w
+        }
+      }
+      if(cur.length)rows.push({photos:cur,height:TARGET});
+      return rows
+    }
+
+    function render(el){
+      const inner=el.querySelector('.gallery-inner');
+      if(!inner)return;
+      const raw=inner.dataset.photos;
+      if(!raw)return;
+      try{
+        const photos=JSON.parse(raw);
+        const doShuffle=el.dataset.shuffle==='true';
+        const w=el.clientWidth;
+        const rows=build(photos,w,doShuffle);
+        inner.style.opacity='0';
+        inner.innerHTML=rows.map(r=>{
+          const imgs=r.photos.map(p=>{
+            const tag='<img src="'+p.src+'" width="'+p.dispW+'" height="'+p.dispH+'" alt="" loading="lazy">';
+            return p.slug?'<a href="/artwork/'+p.slug+'/" style="display:block;flex-shrink:0">'+tag+'</a>':tag
+          }).join('');
+          return '<div style="display:flex;gap:'+GAP+'px;margin-bottom:'+GAP+'px;align-items:center">'+imgs+'</div>'
+        }).join('');
+        inner.style.opacity='1'
+      }catch(e){}
+    }
+
+    document.querySelectorAll('.gallery-wrapper').forEach(el=>{
+      render(el);
+      new ResizeObserver(()=>render(el)).observe(el);
+      window.addEventListener('resize',()=>render(el))
+    })
+  })();
+</script>
+
+<style>
+  .gallery-wrapper { width: 100%; }
+  .gallery-inner { line-height: 0; transition: opacity 0.15s; }
+  .gallery-inner img { display: block; flex-shrink: 0; transition: opacity 0.2s; }
+  .gallery-inner img:hover { opacity: 0.8; }
+</style>

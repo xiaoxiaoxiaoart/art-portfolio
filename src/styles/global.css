@@ -1,0 +1,42 @@
+/* Dev: uses locally installed font. Before deploy, bundle a WOFF2 subset. */
+@font-face {
+  font-family: 'Sarasa Gothic SC';
+  src: local('Sarasa Gothic SC'), local('更纱黑体');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #fafafa;
+  --text: #333;
+  --text-secondary: #555;
+  --text-muted: #999;
+  --sidebar-width: 180px;
+  --gap: 12px;
+  --content-padding: 40px;
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  font-family: 'Sarasa Gothic SC', '更纱黑体', monospace;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}

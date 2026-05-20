@@ -1,0 +1,49 @@
+---
+import '../styles/global.css';
+import Sidebar from '../components/Sidebar.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title ? `${title} — Xiao Yu` : 'Xiao Yu'}</title>
+    <meta name="description" content={description || 'Xiao Yu — art portfolio'} />
+  </head>
+  <body>
+    <div class="page">
+      <Sidebar />
+      <main class="content">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  .page {
+    display: flex;
+    min-height: 100vh;
+  }
+  .content {
+    flex: 1;
+    padding: var(--content-padding);
+    min-width: 0;
+  }
+  @media (max-width: 600px) {
+    .page {
+      flex-direction: column;
+    }
+    .content {
+      padding: 16px 20px;
+    }
+  }
+</style>

@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getEntry } from 'astro:content';
+
+const about = await getEntry('pages', 'about');
+const { Content } = await about!.render();
+---
+
+<BaseLayout title="About">
+  <div class="about-text">
+    <Content />
+  </div>
+</BaseLayout>
+
+<style>
+  .about-text {
+    max-width: 560px;
+    font-size: 14px;
+    line-height: 1.9;
+    color: #444;
+  }
+  .about-text :global(p) {
+    margin-bottom: 20px;
+  }
+  .about-text :global(hr) {
+    border: none;
+    border-top: 1px solid #e8e8e8;
+    margin: 36px 0;
+  }
+  .about-text :global(a) {
+    color: #666;
+  }
+  .about-text :global(a:hover) {
+    color: #111;
+    text-decoration: underline;
+  }
+</style>

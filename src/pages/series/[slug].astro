@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import JustifiedGallery from '../../components/JustifiedGallery.astro';
+import { getCollection } from 'astro:content';
+import { getImage } from 'astro:assets';
+
+export async function getStaticPaths() {
+  const series = await getCollection('series');
+  return series.map(s => ({ params: { slug: s.slug } }));
+}
+
+const { slug } = Astro.params;
+const allSeries = await getCollection('series');
+const currentSeries = allSeries.find(s => s.slug === slug);
+if (!currentSeries) throw new Error(`Series not found: ${slug}`);
+
+const allWorks = await getCollection('works');
+const seriesWorks = allWorks
+  .filter(w => w.data.series === slug)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const photos = await Promise.all(
+  seriesWorks.map(async (w) => {
+    const img = w.data.images[0];
+    const optimized = await getImage({ src: img, width: 1200 });
+    return {
+      src: optimized.src,
+      w: img.width,
+      h: img.height,
+      slug: w.slug
+    };
+  })
+);
+---
+
+<BaseLayout title={currentSeries.data.title}>
+  <h2 class="series-title">{currentSeries.data.title}</h2>
+  {currentSeries.data.description && (
+    <p class="series-desc">{currentSeries.data.description}</p>
+  )}
+  <JustifiedGallery photos={photos} shuffle={false} />
+  <a href="/series/" class="back-link">&larr; All works</a>
+</BaseLayout>
+
+<style>
+  .series-title {
+    font-size: 18px;
+    font-weight: 400;
+    color: #111;
+    margin-bottom: 8px;
+  }
+  .series-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+  .back-link {
+    display: inline-block;
+    margin-top: 32px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .back-link:hover { color: #111; }
+</style>

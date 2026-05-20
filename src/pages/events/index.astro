@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { getImage } from 'astro:assets';
+
+const allEvents = await getCollection('events');
+allEvents.sort((a, b) => b.data.date_start.getTime() - a.data.date_start.getTime());
+
+const eventsByYear: Record<number, typeof allEvents> = {};
+for (const e of allEvents) {
+  const y = e.data.date_start.getFullYear();
+  (eventsByYear[y] ??= []).push(e);
+}
+
+const eventsWithPreviews = await Promise.all(
+  allEvents.map(async (e) => {
+    if (!e.data.preview_image) return { slug: e.slug, previewSrc: '' };
+    const img = await getImage({ src: e.data.preview_image, width: 500 });
+    return { slug: e.slug, previewSrc: img.src };
+  })
+);
+const previewMap = new Map(eventsWithPreviews.map(e => [e.slug, e.previewSrc]));
+---
+
+<BaseLayout title="Events">
+  <div class="events-page">
+    <div class="events-list">
+      {Object.entries(eventsByYear).sort(([a], [b]) => Number(b) - Number(a)).map(([year, evts]) => (
+        <div class="year-group">
+          <div class="year-label">{year}</div>
+          {evts.map(e => (
+            <div
+              class:list={["event-item", { "has-detail": e.data.has_detail }]}
+              data-event-preview={previewMap.get(e.slug) || ''}
+            >
+              &bull; {e.data.title} &mdash; {e.data.venue}, {e.data.city} &mdash;
+              {e.data.date_start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {e.data.date_end && ` &ndash; ${e.data.date_end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+              {!e.data.date_end && ` ${e.data.date_start.getFullYear()}`}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+    <div class="preview-panel"></div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { initEventPreviews } from '../../scripts/events';
+  initEventPreviews();
+</script>
+
+<style>
+  .events-page { display: flex; gap: 40px; }
+  .events-list { flex: 1; max-width: 500px; }
+  .year-group { margin-bottom: 32px; }
+  .year-label {
+    font-size: 13px; color: #aaa;
+    margin-bottom: 10px; letter-spacing: 0.05em;
+  }
+  .event-item {
+    font-size: 13px; padding: 6px 0;
+    color: var(--text-secondary); line-height: 1.6;
+    cursor: default; transition: color 0.15s;
+  }
+  .event-item:hover { color: #111; }
+  .event-item.has-detail { cursor: pointer; }
+  .event-item.has-detail:hover { text-decoration: underline; }
+  .preview-panel { width: 340px; flex-shrink: 0; position: relative; }
+  .preview-panel img {
+    max-width: 100%; max-height: 380px; display: block;
+    position: absolute; opacity: 0; transition: opacity 0.2s;
+  }
+  @media (max-width: 800px) {
+    .preview-panel { display: none; }
+    .events-list { max-width: none; }
+  }
+</style>
