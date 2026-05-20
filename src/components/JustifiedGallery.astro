@@ -109,7 +109,7 @@ const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
         div.style.cssText='display:flex;gap:'+GAP+'px;margin-bottom:'+GAP+'px;align-items:center';
         for(var pi=0;pi<row.photos.length;pi++){
           var p=row.photos[pi];
-          var img=document.createElement('img');img.src=p.src;img.width=p.dispW;img.height=p.dispH;img.alt='';img.loading='lazy';
+          var img=document.createElement('img');img.src=p.src;img.width=p.dispW;img.height=p.dispH;img.alt='';img.loading='lazy';img.decoding='async';
           if(linkMode==='lightbox'){
             if(flatLightbox)flatLightbox.push(p);
             (function(idx){img.addEventListener('click',function(){openLightbox(flatLightbox||[p],idx)})})(flatIdx++);

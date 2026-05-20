@@ -10,7 +10,7 @@ const featured = allWorks.filter(w => w.data.featured);
 const photos = await Promise.all(
   featured.map(async (w) => {
     const img = w.data.images[0];
-    const optimized = await getImage({ src: img, width: 1200 });
+    const optimized = await getImage({ src: img, width: 800 });
     return {
       src: optimized.src,
       w: img.width,
