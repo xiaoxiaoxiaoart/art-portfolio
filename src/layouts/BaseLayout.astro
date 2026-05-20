@@ -19,6 +19,10 @@ const { title, description } = Astro.props;
     <meta name="description" content={description || 'Xiao Yu — art portfolio'} />
   </head>
   <body>
+    <script is:inline>
+      // Redirect Netlify Identity tokens to /admin/
+      (function(){var h=location.hash;if(h&&(h.indexOf('#invite_token=')===0||h.indexOf('#recovery_token=')===0)){location.replace('/admin/'+h)}})();
+    </script>
     <div class="page">
       <Sidebar />
       <main class="content">
