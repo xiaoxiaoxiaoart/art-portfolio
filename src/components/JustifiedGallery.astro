@@ -12,9 +12,10 @@ interface Props {
   photos: Photo[];
   shuffle?: boolean;
   linkMode?: 'artwork' | 'series' | 'lightbox';
+  targetHeight?: number;
 }
 
-const { photos, shuffle = false, linkMode = 'artwork' } = Astro.props;
+const { photos, shuffle = false, linkMode = 'artwork', targetHeight = 130 } = Astro.props;
 const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
 ---
 
@@ -23,32 +24,33 @@ const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
   id={id}
   data-shuffle={String(shuffle)}
   data-link-mode={linkMode}
+  data-target={targetHeight}
 >
   <div class="gallery-inner" data-photos={JSON.stringify(photos)}></div>
 </div>
 
 <script is:inline>
 (function(){
-  var TARGET=208,GAP=12;
+  var GAP=12;
 
   function shuffle(a){var b=[].concat(a);for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t}return b}
 
-  function size(p){var r=p.w/p.h;return r>1?{w:TARGET,h:Math.round(TARGET/r)}:{w:Math.round(TARGET*r),h:TARGET}}
+  function size(p,target){var r=p.w/p.h;return r>1?{w:target,h:Math.round(target/r)}:{w:Math.round(target*r),h:target}}
 
-  function build(photos,cw,doShuffle){
+  function build(photos,cw,doShuffle,target){
     var items=doShuffle?shuffle(photos):[].concat(photos);
     var rows=[],cur=[],cwid=0;
     for(var i=0;i<items.length;i++){
-      var p=items[i],s=size(p);
+      var p=items[i],s=size(p,target);
       var need=cwid+s.w+(cur.length>0?GAP:0);
-      if(need<=cw||cur.length===0){cur.push({src:p.src,w:p.w,h:p.h,dispW:s.w,dispH:s.h,slug:p.slug,seriesSlug:p.seriesSlug,title:p.title});cwid=need}
+      if(need<=cw||cur.length===0){cur.push({src:p.src,w:p.w,h:p.h,dispW:s.w,dispH:s.h,slug:p.slug,seriesSlug:p.seriesSlug,title:p.title,fullSrc:p.fullSrc});cwid=need}
       else{
         var tg=(cur.length-1)*GAP,scale=(cw-tg)/(cwid-tg);
-        rows.push({photos:cur.map(function(x){return{src:x.src,w:x.w,h:x.h,dispW:Math.round(x.dispW*scale),dispH:Math.round(x.dispH*scale),slug:x.slug,seriesSlug:x.seriesSlug,title:x.title}}),height:Math.round(TARGET*scale)});
-        cur=[{src:p.src,w:p.w,h:p.h,dispW:s.w,dispH:s.h,slug:p.slug,seriesSlug:p.seriesSlug,title:p.title}];cwid=s.w
+        rows.push({photos:cur.map(function(x){return{src:x.src,w:x.w,h:x.h,dispW:Math.round(x.dispW*scale),dispH:Math.round(x.dispH*scale),slug:x.slug,seriesSlug:x.seriesSlug,title:x.title,fullSrc:x.fullSrc}}),height:Math.round(target*scale)});
+        cur=[{src:p.src,w:p.w,h:p.h,dispW:s.w,dispH:s.h,slug:p.slug,seriesSlug:p.seriesSlug,title:p.title,fullSrc:p.fullSrc}];cwid=s.w
       }
     }
-    if(cur.length)rows.push({photos:cur,height:TARGET});
+    if(cur.length)rows.push({photos:cur,height:target});
     return rows
   }
 
@@ -93,8 +95,11 @@ const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
       var allPhotos=JSON.parse(raw);
       var doShuffle=el.dataset.shuffle==='true';
       var linkMode=el.dataset.linkMode||'artwork';
+      var baseTarget=parseInt(el.dataset.target)||130;
       var w=el.clientWidth;
-      var rows=build(allPhotos,w,doShuffle);
+      var target=w<600?Math.round(baseTarget*0.65):baseTarget;
+      if(target<70)target=70;
+      var rows=build(allPhotos,w,doShuffle,target);
       inner.style.opacity='0';
       inner.innerHTML='';
       var flatLightbox=linkMode==='lightbox'?[]:null;
