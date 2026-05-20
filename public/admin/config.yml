@@ -1,5 +1,6 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: xiaoxiaoxiaoart/art-portfolio
   branch: main
 
 media_folder: "src/assets/images"
