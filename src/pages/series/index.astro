@@ -15,7 +15,7 @@ function splitTitle(title: string) {
 const seriesWithCovers = await Promise.all(
   allSeries.map(async (s) => {
     const cover = s.data.cover_image;
-    const optimized = await getImage({ src: cover, width: 800 });
+    const optimized = await getImage({ src: cover, width: 600 });
     return {
       slug: s.slug,
       src: optimized.src,
@@ -41,17 +41,20 @@ const seriesWithCovers = await Promise.all(
 
 <style>
   .series-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 28px 24px;
-    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: center;
   }
   .series-card {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   .series-card img {
-    width: 100%;
-    height: auto;
+    height: 260px;
+    width: auto;
+    max-width: 100%;
     display: block;
     transition: opacity 0.2s;
   }
@@ -77,10 +80,12 @@ const seriesWithCovers = await Promise.all(
   .series-card:hover .name-en {
     color: #111;
   }
-  @media (max-width: 900px) {
-    .series-grid { grid-template-columns: repeat(2, 1fr); }
-  }
   @media (max-width: 600px) {
-    .series-grid { grid-template-columns: 1fr; }
+    .series-card img {
+      height: 180px;
+    }
+    .series-grid {
+      gap: 16px;
+    }
   }
 </style>
