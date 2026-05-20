@@ -15,7 +15,7 @@ interface Props {
   targetHeight?: number;
 }
 
-const { photos, shuffle = false, linkMode = 'artwork', targetHeight = 130 } = Astro.props;
+const { photos, shuffle = false, linkMode = 'artwork', targetHeight = 160 } = Astro.props;
 const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
 ---
 
@@ -95,7 +95,7 @@ const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
       var allPhotos=JSON.parse(raw);
       var doShuffle=el.dataset.shuffle==='true';
       var linkMode=el.dataset.linkMode||'artwork';
-      var baseTarget=parseInt(el.dataset.target)||130;
+      var baseTarget=parseInt(el.dataset.target)||160;
       var w=el.clientWidth;
       var target=w<600?Math.round(baseTarget*0.65):baseTarget;
       if(target<70)target=70;
