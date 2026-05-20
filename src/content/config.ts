@@ -26,6 +26,7 @@ const series = defineCollection({
 const events = defineCollection({
   schema: ({ image }) => z.object({
     title: z.string(),
+    type: z.enum(['performance', 'exhibition']).default('exhibition'),
     venue: z.string(),
     city: z.string(),
     date_start: z.date(),

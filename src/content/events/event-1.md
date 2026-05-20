@@ -1,5 +1,6 @@
 ---
 title: "Solo Exhibition: Test Show"
+type: "exhibition"
 venue: "Gallery Example"
 city: "Berlin"
 date_start: 2026-03-15

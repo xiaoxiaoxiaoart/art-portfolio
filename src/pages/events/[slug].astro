@@ -12,14 +12,15 @@ const allEvents = await getCollection('events');
 const event = allEvents.find(e => e.slug === slug);
 if (!event) throw new Error(`找不到事件: ${slug}`);
 
-const { title, venue, city, date_start, date_end, detail_content } = event.data;
+const { title, type, venue, city, date_start, date_end, detail_content } = event.data;
+const typeLabel = type === 'performance' ? '演出' : '展覽';
 ---
 
 <BaseLayout title={title}>
   <div class="event-detail">
     <h1>{title}</h1>
     <div class="meta">
-      {venue}, {city}<br />
+      <span class="type-tag">{typeLabel}</span> {venue}, {city}<br />
       {date_start.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric', year: 'numeric' })}
       {date_end && ` – ${date_end.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric', year: 'numeric' })}`}
     </div>
@@ -32,6 +33,7 @@ const { title, venue, city, date_start, date_end, detail_content } = event.data;
   .event-detail { max-width: 600px; }
   h1 { font-size: 18px; font-weight: 400; color: #111; margin-bottom: 12px; }
   .meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.6; }
+  .type-tag { color: #111; font-weight: 400; }
   .detail-content { font-size: 14px; line-height: 1.8; color: var(--text-secondary); }
   .back-link { display: inline-block; margin-top: 32px; font-size: 13px; color: var(--text-muted); }
   .back-link:hover { color: #111; }
