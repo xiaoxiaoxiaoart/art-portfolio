@@ -2,11 +2,7 @@
 title: "關於"
 ---
 
-Walking between vision and sound, Xiao Yu attempts to connect the physical body into various hardware and software devices, wrapping the entire self in sound like a fish in water. Recently, they have been using the saxophone, vocals, self-made wind instruments, self-made percussion instruments, and hardware/software synthesizers as their primary mediums of sound generation.
-
----
-
-在視覺與聲音間遊走，嘗試將肢體接入不同軟硬體設備，像魚一樣，用聲音包裹周身。最近使用薩克斯風、人聲、自製吹奏樂器、自製打擊樂器和軟硬體合成器作為主要的發聲方式。
+蕭愚是一位在圖像與聲音之間工作的藝術家與教育者。其創作關注身體如何作為感知接口，被接入不同的軟硬體系統、空間結構與在地材料之中，從而捕捉那些處於縫隙與邊緣的震動、迴響與殘留。
 
 ---
 
