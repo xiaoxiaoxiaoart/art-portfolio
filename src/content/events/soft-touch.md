@@ -1,5 +1,5 @@
 ---
-title: "Soft Touch（雙人展）"
+title: "触（双人展）"
 title_en: "Soft Touch (Duo Exhibition)"
 venue: "Hart 畫廊"
 venue_en: "Hart Gallery"

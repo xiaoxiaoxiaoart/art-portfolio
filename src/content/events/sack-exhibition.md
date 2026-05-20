@@ -1,5 +1,5 @@
 ---
-title: "囊 Sack（個展）"
+title: "囊（個展）"
 title_en: "Sack (Solo Exhibition)"
 venue: "T2M 藝術中心"
 venue_en: "T2M Art Center"

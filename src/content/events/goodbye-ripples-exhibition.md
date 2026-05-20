@@ -1,5 +1,5 @@
 ---
-title: "拭褶 Goodbye... Ripples（個展）"
+title: "拭褶（個展）"
 title_en: "Goodbye... Ripples (Solo Exhibition)"
 venue: "Andrews 畫廊"
 venue_en: "Andrews Gallery"

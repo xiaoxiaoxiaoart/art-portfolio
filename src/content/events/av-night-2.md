@@ -1,5 +1,5 @@
 ---
-title: "視聽之夜 Vol.2"
+title: "視聽之夜"
 title_en: "AV Night Vol.2"
 venue: "—"
 city: "廣州"

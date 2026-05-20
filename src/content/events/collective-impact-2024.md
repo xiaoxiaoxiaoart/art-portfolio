@@ -1,6 +1,6 @@
 ---
 title: "Collective ImPACT"
-title_en: "Collective ImPACT"
+title_en: ""
 venue: "—"
 city: "威廉斯堡"
 city_en: "Williamsburg, Virginia"

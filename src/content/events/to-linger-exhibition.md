@@ -1,5 +1,5 @@
 ---
-title: "駐足 To Linger（個展）"
+title: "駐足（個展）"
 title_en: "To Linger (Solo Exhibition)"
 venue: "明日山谷駐地項目"
 venue_en: "Tomorrow Valley Residency Project"
