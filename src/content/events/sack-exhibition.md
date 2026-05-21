@@ -7,5 +7,6 @@ city: "廣州"
 city_en: "Guangzhou, China"
 type: "exhibition"
 date_start: 2025-06-01
+preview_image: "../../assets/images/nang-01.jpg"
 has_detail: false
 ---

@@ -7,5 +7,6 @@ city: "弗吉尼亞州"
 city_en: "Virginia, USA"
 type: "exhibition"
 date_start: 2023-02-01
+preview_image: "../../assets/images/shi-zhe-02.jpg"
 has_detail: false
 ---

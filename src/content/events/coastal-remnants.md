@@ -7,5 +7,6 @@ city: "海南"
 city_en: "Hainan, China"
 type: "exhibition"
 date_start: 2025-08-01
+preview_image: "../../assets/images/cocoon-01.jpg"
 has_detail: false
 ---
