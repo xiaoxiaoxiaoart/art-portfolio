@@ -7,4 +7,3 @@ title: "關於"
 Xiao Yu is an artist and educator working between image and sound. Their practice explores how the body serves as a perceptual interface, connected to various software and hardware systems, spatial structures, and local materials — capturing the vibrations, echoes, and residues that exist in the gaps and along the edges.
 
 [xiaoyaxiart@gmail.com](mailto:xiaoyaxiart@gmail.com)
-[Instagram](#)
