@@ -35,6 +35,7 @@ const events = defineCollection({
     date_start: z.date(),
     date_end: z.date().optional(),
     preview_image: image().optional(),
+    link: z.string().optional(),
     has_detail: z.boolean().default(false),
     detail_content: z.string().optional()
   })

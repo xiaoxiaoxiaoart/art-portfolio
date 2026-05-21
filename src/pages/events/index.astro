@@ -56,7 +56,13 @@ const previewMap = new Map(eventsWithPreviews.map(e => [e.slug, e.previewSrc]));
                   class:list={["event-item", { "has-preview": !!previewSrc }]}
                   data-event-preview={previewSrc}
                 >
-                  {e.data.title} / {e.data.title_en || e.data.title}
+                  {e.data.link ? (
+                    <a href={e.data.link} target="_blank" class="event-link">
+                      {e.data.title} / {e.data.title_en || e.data.title} <span class="link-icon">&#8599;</span>
+                    </a>
+                  ) : (
+                    <>{e.data.title} / {e.data.title_en || e.data.title}</>
+                  )}
                   <span class="meta"> &mdash; {e.data.city_en || e.data.city}, {ymEn(e.data.date_start)}</span>
                 </div>
                 {lineupEn && (
@@ -82,7 +88,13 @@ const previewMap = new Map(eventsWithPreviews.map(e => [e.slug, e.previewSrc]));
                 class:list={["event-item", { "has-preview": !!previewSrc }]}
                 data-event-preview={previewSrc}
               >
-                {e.data.title} / {e.data.title_en || e.data.title}
+                {e.data.link ? (
+                  <a href={e.data.link} target="_blank" class="event-link">
+                    {e.data.title} / {e.data.title_en || e.data.title} <span class="link-icon">&#8599;</span>
+                  </a>
+                ) : (
+                  <>{e.data.title} / {e.data.title_en || e.data.title}</>
+                )}
                 <span class="meta"> &mdash; {e.data.venue_en || e.data.venue}, {e.data.city_en || e.data.city}, {ymEn(e.data.date_start)}</span>
               </div>
             )})}
@@ -124,6 +136,9 @@ const previewMap = new Map(eventsWithPreviews.map(e => [e.slug, e.previewSrc]));
   }
   .event-item.has-preview { cursor: pointer; }
   .event-item.has-preview:hover { color: #111; text-decoration: underline; }
+  .event-link { color: inherit; text-decoration: none; }
+  .event-link:hover { text-decoration: underline; }
+  .link-icon { font-size: 11px; color: var(--text-muted); }
   .event-lineup {
     font-size: 12px; line-height: 1.6; color: var(--text-muted);
   }
