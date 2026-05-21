@@ -129,7 +129,7 @@ const previewMap = new Map(eventsWithPreviews.map(e => [e.slug, e.previewSrc]));
   }
   .meta { color: var(--text-muted); }
   .empty { font-size: 13px; color: var(--text-muted); }
-  .preview-panel { width: 340px; flex-shrink: 0; position: relative; }
+  .preview-panel { width: 340px; flex-shrink: 0; position: sticky; top: var(--content-padding); align-self: flex-start; height: 0; }
   .preview-panel img {
     max-width: 100%; max-height: 380px; display: block;
     position: absolute; opacity: 0; transition: opacity 0.2s;
