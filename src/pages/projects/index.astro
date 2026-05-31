@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const projects = [
+  {
+    title: '燒灼 Burning',
+    year: '2024–2026',
+    videos: [
+      { title: 'Forest', preview: '/src/assets/videos/burn-forest.mp4', link: 'https://youtu.be/He8pvWD8BAw' },
+      { title: 'Burn 07', preview: '/src/assets/videos/burn-burn7.mp4', link: 'https://youtu.be/3ie3OWhZTvo' },
+      { title: 'Burn 02', preview: '/src/assets/videos/burn-burn2.mp4', link: 'https://youtu.be/e9SXZfovEJI' },
+    ]
+  }
+];
+---
+
+<BaseLayout title="項目">
+  {projects.map(p => (
+    <div class="project">
+      <h2 class="project-title">{p.title}</h2>
+      <p class="project-year">{p.year}</p>
+      <div class="video-grid">
+        {p.videos.map(v => (
+          <a href={v.link} target="_blank" class="video-card">
+            <video src={v.preview} autoplay loop muted playsinline></video>
+            <span class="video-label">{v.title}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  ))}
+</BaseLayout>
+
+<style>
+  .project {
+    margin-bottom: 48px;
+  }
+  .project-title {
+    font-size: 18px; font-weight: 400; color: #111;
+    margin-bottom: 4px;
+  }
+  .project-year {
+    font-size: 13px; color: var(--text-muted);
+    margin-bottom: 24px;
+  }
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .video-card {
+    display: block;
+    position: relative;
+    overflow: hidden;
+    background: #eee;
+  }
+  .video-card video {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: opacity 0.3s;
+  }
+  .video-card:hover video {
+    opacity: 0.8;
+  }
+  .video-label {
+    display: block;
+    font-size: 13px; color: var(--text-secondary);
+    margin-top: 8px; text-align: center;
+  }
+  .video-card:hover .video-label {
+    color: #111;
+  }
+  @media (max-width: 700px) {
+    .video-grid { grid-template-columns: 1fr; }
+  }
+</style>
