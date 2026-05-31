@@ -60,7 +60,24 @@ const photos = await Promise.all(
       {descEn && <div class="desc-en">{descEn}</div>}
     </div>
   )}
-  <JustifiedGallery photos={photos} shuffle={false} linkMode="lightbox" targetHeight={230} />
+  {slug === '烧灼' ? (
+    <div class="video-grid">
+      <a href="https://youtu.be/He8pvWD8BAw" target="_blank" class="video-card">
+        <video src="/src/assets/videos/burn-forest.mp4" autoplay loop muted playsinline></video>
+        <span class="video-label">Forest</span>
+      </a>
+      <a href="https://youtu.be/3ie3OWhZTvo" target="_blank" class="video-card">
+        <video src="/src/assets/videos/burn-burn7.mp4" autoplay loop muted playsinline></video>
+        <span class="video-label">Burn 07</span>
+      </a>
+      <a href="https://youtu.be/e9SXZfovEJI" target="_blank" class="video-card">
+        <video src="/src/assets/videos/burn-burn2.mp4" autoplay loop muted playsinline></video>
+        <span class="video-label">Burn 02</span>
+      </a>
+    </div>
+  ) : (
+    <JustifiedGallery photos={photos} shuffle={false} linkMode="lightbox" targetHeight={230} />
+  )}
   <a href="/series/" class="back-link">&larr; 全部作品</a>
 </BaseLayout>
 
@@ -98,4 +115,24 @@ const photos = await Promise.all(
     color: var(--text-muted);
   }
   .back-link:hover { color: #111; }
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .video-card { display: block; }
+  .video-card video {
+    width: 100%; height: auto; display: block;
+    transition: opacity 0.3s; background: #eee;
+  }
+  .video-card:hover video { opacity: 0.8; }
+  .video-label {
+    display: block; font-size: 13px; color: var(--text-secondary);
+    margin-top: 6px; text-align: center;
+  }
+  .video-card:hover .video-label { color: #111; }
+  @media (max-width: 700px) {
+    .video-grid { grid-template-columns: 1fr; }
+  }
 </style>
