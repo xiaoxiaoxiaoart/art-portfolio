@@ -1,6 +1,6 @@
 ---
 title: "光芒"
-title_en: "Enlighting — 17th Occurrence Art Festival"
+title_en: "Enlighting — 17th 發生藝術節 Occurrence Art Festival"
 venue: "—"
 venue_en: "—"
 city: "廣州"
