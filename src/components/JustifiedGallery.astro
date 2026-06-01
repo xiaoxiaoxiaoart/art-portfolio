@@ -141,6 +141,7 @@ const id = 'gallery-' + Math.random().toString(36).slice(2, 8);
     }
     new ResizeObserver(scheduleRender).observe(el);
     window.addEventListener('resize',scheduleRender);
+    el.addEventListener('reshuffle',function(){render(el)});
     render(el)
   })
 })();
