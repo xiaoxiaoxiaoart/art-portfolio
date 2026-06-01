@@ -23,7 +23,7 @@ const nav = [
   </nav>
   {Astro.url.pathname === '/' && (
     <button class="reload-btn" onclick="document.querySelectorAll('.gallery-wrapper').forEach(function(el){el.dispatchEvent(new Event('reshuffle'))})" title="重新排列">
-      <img src="/reload.png" alt="↻" width="24" height="10" />
+      <img src="/reload.png" alt="↻" width="20" height="9" />
     </button>
   )}
 </aside>
