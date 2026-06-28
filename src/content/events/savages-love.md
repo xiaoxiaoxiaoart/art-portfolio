@@ -7,5 +7,5 @@ city_en: "Guangzhou, Guangdong"
 type: "performance"
 date_start: 2025-06-28
 has_detail: false
-detail_content: "蕭愚 + Rubbish / Xiao Yu + Rubbish"
+detail_content: "萧愚 + Rubbish / Xiao Yu + Rubbish"
 ---

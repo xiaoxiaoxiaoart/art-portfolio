@@ -9,5 +9,5 @@ date_start: 2025-10-10
 preview_image: "../../assets/images/event-madman-pao-oct10.jpg"
 link: "https://youtu.be/k24XVK7leZM"
 has_detail: false
-detail_content: "蕭愚、趙子頤、Paolo Gàiba Riva、Jue、Yuri + 陸正 / Xiao Yu, Zhao Ziyi, Paolo Gàiba Riva, Jue, Yuri + Lu Zheng"
+detail_content: "萧愚、趙子頤、Paolo Gàiba Riva、Jue、Yuri + 陸正 / Xiao Yu, Zhao Ziyi, Paolo Gàiba Riva, Jue, Yuri + Lu Zheng"
 ---

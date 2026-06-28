@@ -7,5 +7,5 @@ city_en: "Williamsburg, Virginia"
 type: "performance"
 date_start: 2024-03-24
 has_detail: false
-detail_content: "蕭愚 + Jaden Shahin / Xiao Yu + Jaden Shahin"
+detail_content: "萧愚 + Jaden Shahin / Xiao Yu + Jaden Shahin"
 ---

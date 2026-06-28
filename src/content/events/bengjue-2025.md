@@ -9,5 +9,5 @@ date_start: 2025-05-03
 preview_image: "../../assets/images/event-bengjue.jpg"
 link: "https://www.youtube.com/watch?v=SsN-1AUYTPA"
 has_detail: false
-detail_content: "蕭愚、Hannah、林隱、光旭、陳剛、陸正 / Xiao Yu, Hannah, Lin Yin, Guangxu, Chen Gang, Lu Zheng"
+detail_content: "萧愚、Hannah、林隱、光旭、陳剛、陸正 / Xiao Yu, Hannah, Lin Yin, Guangxu, Chen Gang, Lu Zheng"
 ---

@@ -7,5 +7,5 @@ city_en: "Guangzhou, Guangdong"
 type: "performance"
 date_start: 2025-10-24
 has_detail: false
-detail_content: "蕭愚、Ahi、Deep Snake S.S. / Xiao Yu, Ahi, Deep Snake S.S."
+detail_content: "萧愚、Ahi、Deep Snake S.S. / Xiao Yu, Ahi, Deep Snake S.S."
 ---

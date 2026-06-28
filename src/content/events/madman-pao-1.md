@@ -7,5 +7,5 @@ city_en: "Guangzhou, Guangdong"
 type: "performance"
 date_start: 2025-07-26
 has_detail: false
-detail_content: "蕭愚、林隱、林芝瑛 / Xiao Yu, Lin Yin, Lin Zhiying"
+detail_content: "萧愚、林隱、林芝瑛 / Xiao Yu, Lin Yin, Lin Zhiying"
 ---
