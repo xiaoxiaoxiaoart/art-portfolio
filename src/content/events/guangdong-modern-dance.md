@@ -1,6 +1,6 @@
 ---
 title: "廣東現代舞團小劇場"
-title_en: "Guangdong Modern Dance Theatre — 17th 發生藝術節 Occurrence Art Festival"
+title_en: "Guangdong Modern Dance Theatre — 17th 發生藝術節"
 venue: "—"
 venue_en: "—"
 city: "廣州"
