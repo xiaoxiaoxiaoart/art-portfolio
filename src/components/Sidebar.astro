@@ -38,18 +38,21 @@ const nav = [
     gap: 6px;
   }
   .artist-name {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 0;
     margin-bottom: 28px;
     line-height: 1.3;
   }
   .name-en {
-    font-size: 30px;
+    font-size: 35px;
     color: #111;
     font-style: normal;
-    letter-spacing: 0;
+    letter-spacing: 0.1em;
+    display: inline-block;
+    transform: scaleY(0.7);
+    transform-origin: bottom;
   }
   .name-cn {
     font-size: 35px;
