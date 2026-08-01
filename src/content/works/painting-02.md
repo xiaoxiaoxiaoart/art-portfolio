@@ -4,5 +4,5 @@ series: "画"
 images:
   - "../../assets/images/painting-02.jpg"
 featured: true
-order: 2
+order: 12
 ---
