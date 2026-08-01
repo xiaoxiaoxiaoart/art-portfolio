@@ -47,6 +47,8 @@ const photos = await Promise.all(
     };
   })
 );
+const drawingPhotos = slug === '画' ? photos.slice(0, 4) : [];
+const paintingPhotos = slug === '画' ? photos.slice(4) : [];
 ---
 
 <BaseLayout title={currentSeries.data.title}>
@@ -71,6 +73,11 @@ const photos = await Promise.all(
       <a href="https://youtu.be/e9SXZfovEJI" target="_blank" class="video-card">
         <video src="/burn-burn2.mp4" autoplay loop muted playsinline preload="none"></video>
       </a>
+    </div>
+  ) : slug === '画' ? (
+    <div class="split-gallery">
+      <JustifiedGallery photos={drawingPhotos} shuffle={false} linkMode="lightbox" targetHeight={300} />
+      <JustifiedGallery photos={paintingPhotos} shuffle={false} linkMode="lightbox" targetHeight={300} />
     </div>
   ) : (
     <JustifiedGallery photos={photos} shuffle={false} linkMode="lightbox" targetHeight={220} />
@@ -112,6 +119,11 @@ const photos = await Promise.all(
     color: var(--text-muted);
   }
   .back-link:hover { color: #111; }
+  .split-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
   .video-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
