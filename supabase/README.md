@@ -64,4 +64,4 @@ schedule = "0 0 * * *"
 ## 5. 测试
 
 - 在 Dashboard 的函数页面点 **Invoke**（或本地 `npx supabase functions serve`），确认微信收到 Server 酱推送。
-- 打开植物页面 `https://xiao-yu.vercel.app/garden-a7k3x9`，添加植物、记录浇水、上传照片，确认数据落库、跨设备同步。
+- 打开植物页面 `你的域名/garden`，添加植物、记录浇水、上传照片，确认数据落库、跨设备同步。
