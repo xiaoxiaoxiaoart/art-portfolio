@@ -3,6 +3,6 @@ title: "self_blue"
 series: "画"
 images:
   - "../../assets/images/painting-04.jpg"
-featured: true
+featured: false
 order: 14
 ---
