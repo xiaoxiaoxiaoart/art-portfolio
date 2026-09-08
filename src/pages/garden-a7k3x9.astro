@@ -1,0 +1,27 @@
+---
+import '../styles/global.css';
+import '../styles/garden.css';
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>植物养护</title>
+  </head>
+  <body>
+    <div class="garden-page">
+      <aside class="garden-sidebar">
+        <div class="garden-title">植物养护</div>
+      </aside>
+      <main class="garden-content" id="garden-root"></main>
+    </div>
+
+    <script>
+      import { init } from '../components/garden/app';
+      init();
+    </script>
+  </body>
+</html>

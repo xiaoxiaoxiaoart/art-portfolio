@@ -1,0 +1,419 @@
+/* 植物养护页面样式 —— 沿用 art-portfolio 设计语言
+   字体/基础变量来自 global.css（Sarasa Fixed Slab SC、黑白灰、--gap 等） */
+
+:root {
+  --g-status-healthy: #5b8a4a;
+  --g-status-attention: #b58900;
+  --g-status-sick: #b04a4a;
+}
+
+.garden-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+.garden-sidebar {
+  width: var(--sidebar-width);
+  padding: var(--content-padding) 24px;
+  flex-shrink: 0;
+}
+
+.garden-title {
+  font-size: 30px;
+  color: #111;
+  font-style: normal;
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+.garden-content {
+  flex: 1;
+  padding: var(--content-padding);
+  min-width: 0;
+  max-width: 1080px;
+}
+
+/* 顶部工具栏（标题 + 添加按钮） */
+.garden-toolbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.garden-toolbar h2 {
+  font-size: 20px;
+  color: #111;
+  font-weight: 300;
+  font-style: normal;
+}
+
+/* 按钮：极简、无圆角、边框 hover 变深 */
+.garden-btn {
+  font-family: inherit;
+  font-size: 15px;
+  font-style: normal;
+  background: none;
+  border: 1px solid #999;
+  color: #333;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.garden-btn:hover {
+  color: #111;
+  border-color: #111;
+}
+
+.garden-btn.primary {
+  border-color: #111;
+  color: #111;
+}
+
+.garden-btn.primary:hover {
+  background: #111;
+  color: #fafafa;
+}
+
+.garden-btn.danger:hover {
+  border-color: var(--g-status-sick);
+  color: var(--g-status-sick);
+}
+
+.garden-btn.small {
+  font-size: 13px;
+  padding: 3px 10px;
+}
+
+/* 看板 */
+.garden-dashboard {
+  border: 1px solid #ddd;
+  padding: 16px 20px;
+  margin-bottom: 32px;
+}
+
+.garden-dashboard h3 {
+  font-size: 16px;
+  font-style: normal;
+  color: #111;
+  margin-bottom: 8px;
+  font-weight: 300;
+}
+
+.garden-dashboard .due-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.garden-dashboard .due-plant {
+  color: var(--g-status-attention);
+  cursor: pointer;
+}
+
+.garden-dashboard .due-plant:hover {
+  color: #111;
+}
+
+.garden-dashboard .none {
+  color: var(--text-muted);
+  font-style: normal;
+}
+
+/* 植物网格 */
+.garden-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--gap);
+}
+
+.garden-card {
+  cursor: pointer;
+}
+
+.garden-card-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #eee;
+  transition: opacity 0.2s;
+}
+
+.garden-card:hover .garden-card-img {
+  opacity: 0.8;
+}
+
+.garden-card-name {
+  margin-top: 8px;
+  font-size: 16px;
+  color: #111;
+  font-style: normal;
+}
+
+.garden-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: normal;
+  margin-top: 4px;
+}
+
+/* 状态徽章：小圆点 + 文字 */
+.garden-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-style: normal;
+}
+
+.garden-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #999;
+}
+
+.garden-status.healthy {
+  color: var(--g-status-healthy);
+}
+.garden-status.healthy::before {
+  background: var(--g-status-healthy);
+}
+
+.garden-status.attention {
+  color: var(--g-status-attention);
+}
+.garden-status.attention::before {
+  background: var(--g-status-attention);
+}
+
+.garden-status.sick {
+  color: var(--g-status-sick);
+}
+.garden-status.sick::before {
+  background: var(--g-status-sick);
+}
+
+/* 需浇水提示 */
+.garden-due {
+  color: var(--g-status-attention);
+  font-size: 13px;
+  font-style: normal;
+}
+
+/* 详情视图 */
+.garden-detail-header {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.garden-detail-img {
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  background: #eee;
+  flex-shrink: 0;
+}
+
+.garden-detail-title {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.garden-detail-title h2 {
+  font-size: 26px;
+  color: #111;
+  font-style: normal;
+  font-weight: 300;
+}
+
+.garden-detail-title .species {
+  color: var(--text-muted);
+  font-size: 15px;
+  font-style: normal;
+}
+
+.garden-detail-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.garden-detail-section {
+  margin-bottom: 28px;
+}
+
+.garden-detail-section h3 {
+  font-size: 15px;
+  color: var(--text-muted);
+  font-style: normal;
+  font-weight: 300;
+  margin-bottom: 10px;
+  letter-spacing: 0.05em;
+}
+
+.garden-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.garden-fact {
+  font-size: 14px;
+  color: #333;
+  font-style: normal;
+}
+
+.garden-fact .label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+/* 事件时间线 */
+.garden-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.garden-event {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-style: normal;
+}
+
+.garden-event .ev-type {
+  font-size: 13px;
+  color: #111;
+  flex-shrink: 0;
+  min-width: 44px;
+}
+
+.garden-event .ev-date {
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.garden-event .ev-note {
+  font-size: 14px;
+  color: #333;
+  flex: 1;
+}
+
+.garden-event .ev-note:empty::after {
+  content: '—';
+  color: var(--text-muted);
+}
+
+/* 表单 */
+.garden-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 480px;
+}
+
+.garden-form-photo {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  background: #eee;
+}
+
+.garden-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.garden-field label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: normal;
+}
+
+.garden-field input,
+.garden-field select,
+.garden-field textarea {
+  font-family: inherit;
+  font-size: 15px;
+  font-style: normal;
+  color: #333;
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 8px 10px;
+  transition: border-color 0.2s;
+}
+
+.garden-field input:focus,
+.garden-field select:focus,
+.garden-field textarea:focus {
+  outline: none;
+  border-color: #111;
+}
+
+.garden-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.garden-empty {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.garden-back {
+  font-family: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 0;
+  margin-bottom: 20px;
+}
+
+.garden-back:hover {
+  color: #111;
+}
+
+.garden-error {
+  color: var(--g-status-sick);
+  font-size: 14px;
+  font-style: normal;
+}
+
+/* 移动端 */
+@media (max-width: 600px) {
+  .garden-page {
+    flex-direction: column;
+  }
+  .garden-sidebar {
+    width: 100%;
+    padding: 16px 20px;
+  }
+  .garden-content {
+    padding: 16px 20px;
+  }
+  .garden-detail-header {
+    flex-direction: column;
+  }
+  .garden-detail-img {
+    width: 100%;
+    height: auto;
+  }
+}
