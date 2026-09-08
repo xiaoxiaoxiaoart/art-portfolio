@@ -14,6 +14,8 @@ export interface PlantInput {
   status?: PlantStatus;
   light?: string | null;
   water_frequency_days?: number | null;
+  dormant?: boolean;
+  dormant_water_frequency_days?: number | null;
   temp_range?: string | null;
   humidity?: string | null;
   fertilizer_notes?: string | null;
@@ -110,12 +112,15 @@ export async function uploadPhoto(file: File): Promise<string> {
   return data.publicUrl;
 }
 
-// 是否"该浇水"：距上次浇水已超过浇水周期
+// 是否"该浇水"：距上次浇水已超过浇水周期（休眠时用休眠期周期）
 export function needsWatering(plant: Plant): boolean {
-  if (!plant.last_watered_at || !plant.water_frequency_days) return false;
+  const freq = plant.dormant
+    ? plant.dormant_water_frequency_days ?? plant.water_frequency_days
+    : plant.water_frequency_days;
+  if (!plant.last_watered_at || !freq) return false;
   const due =
     new Date(plant.last_watered_at).getTime() +
-    plant.water_frequency_days * 24 * 60 * 60 * 1000;
+    freq * 24 * 60 * 60 * 1000;
   return Date.now() >= due;
 }
 
@@ -123,4 +128,52 @@ export function needsWatering(plant: Plant): boolean {
 export function daysSince(date: string | null): number | null {
   if (!date) return null;
   return Math.floor((Date.now() - new Date(date).getTime()) / (24 * 60 * 60 * 1000));
+}
+
+// 推迟浇水 N 天：调整 last_watered_at，使"该浇水"提醒顺延 N 天
+export async function postponeWatering(
+  plantId: string,
+  days: number,
+): Promise<void> {
+  if (!supabase) throw new Error('未配置 Supabase');
+  const { data: plant, error } = await supabase
+    .from('plants')
+    .select('water_frequency_days, dormant, dormant_water_frequency_days')
+    .eq('id', plantId)
+    .single();
+  if (error || !plant) throw error ?? new Error('植物不存在');
+
+  const freq = plant.dormant
+    ? plant.dormant_water_frequency_days ?? plant.water_frequency_days
+    : plant.water_frequency_days;
+  if (!freq) throw new Error('未设置浇水周期，无法推迟');
+
+  const newLast = new Date(
+    Date.now() + days * 86400000 - freq * 86400000,
+  ).toISOString();
+  const { error: e } = await supabase
+    .from('plants')
+    .update({ last_watered_at: newLast })
+    .eq('id', plantId);
+  if (e) throw e;
+
+  await supabase.from('events').insert({
+    plant_id: plantId,
+    type: 'diary',
+    note: `推迟浇水 ${days} 天`,
+    date: new Date().toISOString(),
+  });
+}
+
+// 上传照片并记录为照片时间线事件
+export async function addPhoto(plantId: string, file: File): Promise<void> {
+  if (!supabase) throw new Error('未配置 Supabase');
+  const url = await uploadPhoto(file);
+  const { error } = await supabase.from('events').insert({
+    plant_id: plantId,
+    type: 'photo',
+    photo_url: url,
+    date: new Date().toISOString(),
+  });
+  if (error) throw error;
 }

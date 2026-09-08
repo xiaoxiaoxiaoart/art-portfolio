@@ -248,6 +248,41 @@
   flex-wrap: wrap;
 }
 
+/* 休眠开关 */
+.garden-dormant {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+  font-style: normal;
+  cursor: pointer;
+}
+
+.garden-dormant input {
+  cursor: pointer;
+}
+
+/* 照片时间线 */
+.garden-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--gap);
+}
+
+.garden-photo {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #eee;
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+
+.garden-photo:hover {
+  opacity: 0.8;
+}
+
 .garden-detail-section {
   margin-bottom: 28px;
 }

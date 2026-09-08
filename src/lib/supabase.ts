@@ -8,7 +8,8 @@ export type EventType =
   | 'prune'
   | 'pest'
   | 'diary'
-  | 'health';
+  | 'health'
+  | 'photo';
 
 export interface Plant {
   id: string;
@@ -19,6 +20,8 @@ export interface Plant {
   status: PlantStatus;
   light: string | null;
   water_frequency_days: number | null;
+  dormant: boolean;
+  dormant_water_frequency_days: number | null;
   temp_range: string | null;
   humidity: string | null;
   fertilizer_notes: string | null;

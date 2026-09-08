@@ -13,6 +13,8 @@ import {
   deletePlant,
   recordEvent,
   uploadPhoto,
+  addPhoto,
+  postponeWatering,
   needsWatering,
   daysSince,
   type PlantInput,
@@ -32,6 +34,7 @@ const eventTypeLabel: Record<EventType, string> = {
   pest: '病虫害',
   diary: '日记',
   health: '健康',
+  photo: '照片',
 };
 
 let plants: Plant[] = [];
@@ -157,6 +160,66 @@ async function handleStatusChange(status: PlantStatus): Promise<void> {
   }
 }
 
+async function handlePostpone(): Promise<void> {
+  if (!selected || busy) return;
+  const input = window.prompt('推迟几天浇水？', '3');
+  if (input === null) return;
+  const days = parseInt(input, 10);
+  if (!Number.isFinite(days) || days <= 0) {
+    errorMsg = '请输入正数天数';
+    render();
+    return;
+  }
+  busy = true;
+  errorMsg = null;
+  try {
+    await postponeWatering(selected.id, days);
+    const [freshPlants, freshEvents] = await Promise.all([
+      fetchPlants(),
+      fetchEvents(selected.id),
+    ]);
+    plants = freshPlants;
+    events = freshEvents;
+    selected = freshPlants.find((p) => p.id === selected!.id) ?? null;
+  } catch (err) {
+    errorMsg = err instanceof Error ? err.message : '推迟失败';
+  } finally {
+    busy = false;
+    render();
+  }
+}
+
+async function handleDormantToggle(dormant: boolean): Promise<void> {
+  if (!selected || busy) return;
+  busy = true;
+  errorMsg = null;
+  try {
+    await updatePlant(selected.id, { dormant });
+    plants = await fetchPlants();
+    selected = plants.find((p) => p.id === selected!.id) ?? null;
+  } catch (err) {
+    errorMsg = err instanceof Error ? err.message : '更新失败';
+  } finally {
+    busy = false;
+    render();
+  }
+}
+
+async function handlePhotoUpload(file: File): Promise<void> {
+  if (!selected || busy) return;
+  busy = true;
+  errorMsg = null;
+  try {
+    await addPhoto(selected.id, file);
+    events = await fetchEvents(selected.id);
+  } catch (err) {
+    errorMsg = err instanceof Error ? err.message : '上传失败';
+  } finally {
+    busy = false;
+    render();
+  }
+}
+
 // ---- 渲染 ----
 
 function render(): void {
@@ -210,10 +273,15 @@ function cardHtml(p: Plant): string {
 function detailHtml(): string {
   const p = selected!;
   const days = daysSince(p.last_watered_at);
+  const waterLabel = p.dormant
+    ? `休眠期 ${p.dormant_water_frequency_days ?? p.water_frequency_days} 天`
+    : p.water_frequency_days
+      ? `${p.water_frequency_days} 天`
+      : '';
   const facts = [
     ['摆放位置', p.location],
     ['光照', p.light],
-    ['浇水周期', p.water_frequency_days ? `${p.water_frequency_days} 天` : ''],
+    ['浇水周期', waterLabel],
     ['适宜温度', p.temp_range],
     ['湿度', p.humidity],
     ['购入日期', p.acquired_date],
@@ -227,10 +295,21 @@ function detailHtml(): string {
     )
     .join('');
 
+  const photos = events.filter((ev) => ev.type === 'photo');
+  const photoGrid = photos.length
+    ? `<div class="garden-photos">${photos
+        .map(
+          (ev) =>
+            `<img class="garden-photo" src="${escapeHtml(ev.photo_url ?? '')}" alt="${fmtDate(ev.date)}" loading="lazy" title="${fmtDate(ev.date)}" />`,
+        )
+        .join('')}</div>`
+    : '<div class="garden-empty">还没有照片，点「上传照片」记录生长变化。</div>';
+
+  const timelineEvents = events.filter((ev) => ev.type !== 'photo');
   const timeline =
-    events.length === 0
+    timelineEvents.length === 0
       ? '<div class="garden-empty">暂无记录</div>'
-      : `<div class="garden-timeline">${events
+      : `<div class="garden-timeline">${timelineEvents
           .map(
             (ev) =>
               `<div class="garden-event"><span class="ev-type">${eventTypeLabel[ev.type]}</span><span class="ev-date">${fmtDate(ev.date)}</span><span class="ev-note">${escapeHtml(ev.note ?? '')}</span></div>`,
@@ -252,17 +331,22 @@ function detailHtml(): string {
         ${p.species ? `<div class="species">${escapeHtml(p.species)}</div>` : ''}
         <span class="garden-status ${p.status}">${statusLabel[p.status]}</span>
         ${needsWatering(p) ? '<span class="garden-due">需要浇水</span>' : ''}
+        <label class="garden-dormant"><input type="checkbox" id="dormant-toggle" ${p.dormant ? 'checked' : ''} /> 休眠中</label>
         <div class="garden-detail-actions">
           <button class="garden-btn primary" data-action="water">记录浇水</button>
+          <button class="garden-btn" data-action="postpone">推迟浇水</button>
+          <button class="garden-btn" data-action="photo">上传照片</button>
           <button class="garden-btn" data-action="edit">编辑</button>
           <button class="garden-btn danger" data-action="delete">删除</button>
         </div>
         <div class="garden-detail-actions">${statusBtns}</div>
       </div>
     </div>
+    <input type="file" id="detail-photo-input" accept="image/*" style="display:none" />
     <div class="garden-detail-section"><h3>习性</h3><div class="garden-facts">${facts}</div></div>
     ${p.fertilizer_notes ? `<div class="garden-detail-section"><h3>施肥</h3><div class="garden-fact">${escapeHtml(p.fertilizer_notes)}</div></div>` : ''}
     ${p.notes ? `<div class="garden-detail-section"><h3>备注</h3><div class="garden-fact">${escapeHtml(p.notes)}</div></div>` : ''}
+    <div class="garden-detail-section"><h3>照片</h3>${photoGrid}</div>
     <div class="garden-detail-section"><h3>养护记录</h3>${timeline}</div>`;
 }
 
@@ -289,6 +373,7 @@ function formHtml(): string {
       ${field('摆放位置', `<input name="location" value="${p?.location ? escapeHtml(p.location) : ''}" />`)}
       ${field('光照需求', `<input name="light" value="${p?.light ? escapeHtml(p.light) : ''}" />`)}
       ${field('浇水周期（天）', `<input name="water_frequency_days" type="number" min="1" value="${p?.water_frequency_days ?? ''}" />`)}
+      ${field('休眠期浇水周期（天）', `<input name="dormant_water_frequency_days" type="number" min="1" value="${p?.dormant_water_frequency_days ?? ''}" />`)}
       ${field('适宜温度', `<input name="temp_range" value="${p?.temp_range ? escapeHtml(p.temp_range) : ''}" />`)}
       ${field('湿度需求', `<input name="humidity" value="${p?.humidity ? escapeHtml(p.humidity) : ''}" />`)}
       ${field('施肥说明', `<textarea name="fertilizer_notes" rows="2">${p?.fertilizer_notes ? escapeHtml(p.fertilizer_notes) : ''}</textarea>`)}
@@ -321,6 +406,9 @@ function bindDetail(el: HTMLElement): void {
   el.querySelector('[data-action="water"]')?.addEventListener('click', () =>
     void handleWater(),
   );
+  el.querySelector('[data-action="postpone"]')?.addEventListener('click', () =>
+    void handlePostpone(),
+  );
   el.querySelector('[data-action="edit"]')?.addEventListener('click', () =>
     openForm(selected),
   );
@@ -331,6 +419,19 @@ function bindDetail(el: HTMLElement): void {
     btn.addEventListener('click', () =>
       void handleStatusChange(btn.dataset.status as PlantStatus),
     );
+  });
+
+  const dormantToggle = el.querySelector('#dormant-toggle') as HTMLInputElement | null;
+  dormantToggle?.addEventListener('change', () => {
+    void handleDormantToggle(dormantToggle.checked);
+  });
+
+  const photoBtn = el.querySelector('[data-action="photo"]');
+  const photoInput = el.querySelector('#detail-photo-input') as HTMLInputElement | null;
+  photoBtn?.addEventListener('click', () => photoInput?.click());
+  photoInput?.addEventListener('change', () => {
+    const file = photoInput.files?.[0];
+    if (file) void handlePhotoUpload(file);
   });
 }
 
@@ -375,6 +476,7 @@ function bindForm(el: HTMLElement): void {
       return typeof v === 'string' && v.trim() ? v.trim() : null;
     };
     const waterDays = str('water_frequency_days');
+    const dormantDays = str('dormant_water_frequency_days');
     const input: PlantInput = {
       name: (fd.get('name') as string) || '',
       species: str('species'),
@@ -382,6 +484,7 @@ function bindForm(el: HTMLElement): void {
       status: (fd.get('status') as PlantStatus) || 'healthy',
       light: str('light'),
       water_frequency_days: waterDays ? Number(waterDays) : null,
+      dormant_water_frequency_days: dormantDays ? Number(dormantDays) : null,
       temp_range: str('temp_range'),
       humidity: str('humidity'),
       fertilizer_notes: str('fertilizer_notes'),

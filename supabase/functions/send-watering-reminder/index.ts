@@ -12,12 +12,17 @@ interface PlantRow {
   name: string;
   last_watered_at: string | null;
   water_frequency_days: number | null;
+  dormant: boolean;
+  dormant_water_frequency_days: number | null;
 }
 
 function needsWatering(p: PlantRow): boolean {
-  if (!p.last_watered_at || !p.water_frequency_days) return false;
+  const freq = p.dormant
+    ? p.dormant_water_frequency_days ?? p.water_frequency_days
+    : p.water_frequency_days;
+  if (!p.last_watered_at || !freq) return false;
   const due =
-    new Date(p.last_watered_at).getTime() + p.water_frequency_days * 86400000;
+    new Date(p.last_watered_at).getTime() + freq * 86400000;
   return Date.now() >= due;
 }
 
@@ -32,7 +37,7 @@ Deno.serve(async () => {
 
   const { data: plants, error } = await supabase
     .from('plants')
-    .select('id, name, last_watered_at, water_frequency_days');
+    .select('id, name, last_watered_at, water_frequency_days, dormant, dormant_water_frequency_days');
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
