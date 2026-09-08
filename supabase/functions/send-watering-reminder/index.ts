@@ -42,10 +42,17 @@ Deno.serve(async () => {
   }
 
   const due = (plants ?? []).filter(needsWatering);
-  const title =
-    due.length > 0 ? `🌱 ${due.length} 株植物该浇水了` : '🌱 今天没有植物需要浇水';
-  const desp =
-    due.length > 0 ? due.map((p) => `- ${p.name}`).join('\n') : '所有植物状态良好';
+
+  // 没有需要浇水的植物就不推送，避免每天打扰
+  if (due.length === 0) {
+    return new Response(
+      JSON.stringify({ skipped: true, message: '没有需要浇水的植物' }),
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+  }
+
+  const title = `🌱 ${due.length} 株植物该浇水了`;
+  const desp = due.map((p) => `- ${p.name}`).join('\n');
 
   const resp = await fetch(`https://sctapi.ftqq.com/${sendKey}.send`, {
     method: 'POST',
