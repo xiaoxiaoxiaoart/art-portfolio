@@ -117,7 +117,9 @@ export function needsWatering(plant: Plant): boolean {
   const freq = plant.dormant
     ? plant.dormant_water_frequency_days ?? plant.water_frequency_days
     : plant.water_frequency_days;
-  if (!plant.last_watered_at || !freq) return false;
+  if (!freq) return false;
+  // 设置了周期但从未浇水，视为"该浇水"
+  if (!plant.last_watered_at) return true;
   const due =
     new Date(plant.last_watered_at).getTime() +
     freq * 24 * 60 * 60 * 1000;
