@@ -45,6 +45,7 @@ let events: PlantEvent[] = [];
 let loading = true;
 let busy = false;
 let errorMsg: string | null = null;
+let groupBy: 'zone' | 'category' = 'zone';
 
 function root(): HTMLElement {
   return document.getElementById('garden-root')!;
@@ -244,6 +245,21 @@ function render(): void {
   }
 }
 
+function groupPlants(): { key: string; plants: Plant[] }[] {
+  const map = new Map<string, Plant[]>();
+  for (const p of plants) {
+    const key = (groupBy === 'zone' ? p.zone : p.category)?.trim() || '未分类';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(p);
+  }
+  const groups: { key: string; plants: Plant[] }[] = [];
+  for (const [key, list] of map) {
+    if (key !== '未分类') groups.push({ key, plants: list });
+  }
+  if (map.has('未分类')) groups.push({ key: '未分类', plants: map.get('未分类')! });
+  return groups;
+}
+
 function gridHtml(): string {
   const due = plants.filter(needsWatering);
   const dueHtml = due.length
@@ -252,13 +268,23 @@ function gridHtml(): string {
         .join('')}</div></div>`
     : '';
 
+  const tabs = `<div class="garden-tabs">
+    <button class="garden-tab ${groupBy === 'zone' ? 'active' : ''}" data-group="zone">按区块</button>
+    <button class="garden-tab ${groupBy === 'category' ? 'active' : ''}" data-group="category">按类型</button>
+  </div>`;
+
   const body = loading
     ? '<div class="garden-empty">加载中…</div>'
     : plants.length === 0
       ? '<div class="garden-empty">还没有植物，点击右上角「添加植物」开始。</div>'
-      : `<div class="garden-grid">${plants.map(cardHtml).join('')}</div>`;
+      : groupPlants()
+          .map(
+            (g) =>
+              `<div class="garden-group"><h3 class="garden-group-title">${escapeHtml(g.key)} <span class="garden-group-count">${g.plants.length}</span></h3><div class="garden-grid">${g.plants.map(cardHtml).join('')}</div></div>`,
+          )
+          .join('');
 
-  return `<div class="garden-toolbar"><h2>我的植物</h2><button class="garden-btn primary" data-action="add">+ 添加植物</button></div>${dueHtml}${body}`;
+  return `<div class="garden-toolbar"><h2>我的植物</h2><button class="garden-btn primary" data-action="add">+ 添加植物</button></div>${dueHtml}${tabs}${body}`;
 }
 
 function cardHtml(p: Plant): string {
@@ -267,7 +293,9 @@ function cardHtml(p: Plant): string {
     ? `<img class="garden-card-img" src="${escapeHtml(p.photo_url)}" alt="${escapeHtml(p.name)}" loading="lazy" />`
     : '<div class="garden-card-img"></div>';
   const due = needsWatering(p) ? '<span class="garden-due">需浇水</span>' : '';
-  return `<div class="garden-card" data-open="${p.id}">${img}<div class="garden-card-name">${escapeHtml(p.name)}</div><div class="garden-card-meta"><span class="garden-status ${p.status}">${statusLabel[p.status]}</span>${due}<span>${days !== null ? `${days} 天前浇水` : '未浇水'}</span></div></div>`;
+  const tag = groupBy === 'zone' ? p.category : p.zone;
+  const tagHtml = tag ? `<span class="garden-card-tag">${escapeHtml(tag)}</span>` : '';
+  return `<div class="garden-card" data-open="${p.id}">${img}<div class="garden-card-name">${escapeHtml(p.name)}</div><div class="garden-card-meta">${tagHtml}<span class="garden-status ${p.status}">${statusLabel[p.status]}</span>${due}<span>${days !== null ? `${days} 天前浇水` : '未浇水'}</span></div></div>`;
 }
 
 function detailHtml(): string {
@@ -280,6 +308,8 @@ function detailHtml(): string {
       : '';
   const facts = [
     ['摆放位置', p.location],
+    ['区块', p.zone],
+    ['类型', p.category],
     ['光照', p.light],
     ['浇水周期', waterLabel],
     ['适宜温度', p.temp_range],
@@ -363,6 +393,8 @@ function formHtml(): string {
   const photoPreview = p?.photo_url
     ? `<img class="garden-form-photo" id="form-photo-preview" src="${escapeHtml(p.photo_url)}" alt="" />`
     : '<img class="garden-form-photo" id="form-photo-preview" style="display:none" alt="" />';
+  const zoneOptions = [...new Set(plants.map((pl) => pl.zone).filter((v): v is string => Boolean(v)))].map((z) => `<option value="${escapeHtml(z)}"></option>`).join('');
+  const categoryOptions = [...new Set(plants.map((pl) => pl.category).filter((v): v is string => Boolean(v)))].map((c) => `<option value="${escapeHtml(c)}"></option>`).join('');
 
   return `<button class="garden-back" data-action="back">← 返回</button>
     <form class="garden-form" id="garden-form">
@@ -371,6 +403,8 @@ function formHtml(): string {
       <div class="garden-field"><label>照片</label>${photoPreview}<input type="file" id="form-photo-input" accept="image/*" /><span class="garden-empty" id="form-photo-status"></span></div>
       ${field('健康状态', `<select name="status">${statusOptions}</select>`)}
       ${field('摆放位置', `<input name="location" value="${p?.location ? escapeHtml(p.location) : ''}" />`)}
+      ${field('区块', `<input name="zone" list="zone-list" value="${p?.zone ? escapeHtml(p.zone) : ''}" /><datalist id="zone-list">${zoneOptions}</datalist>`)}
+      ${field('类型', `<input name="category" list="category-list" value="${p?.category ? escapeHtml(p.category) : ''}" /><datalist id="category-list">${categoryOptions}</datalist>`)}
       ${field('光照需求', `<input name="light" value="${p?.light ? escapeHtml(p.light) : ''}" />`)}
       ${field('浇水周期（天）', `<input name="water_frequency_days" type="number" min="1" value="${p?.water_frequency_days ?? ''}" />`)}
       ${field('休眠期浇水周期（天）', `<input name="dormant_water_frequency_days" type="number" min="1" value="${p?.dormant_water_frequency_days ?? ''}" />`)}
@@ -387,6 +421,12 @@ function formHtml(): string {
 // ---- 事件绑定 ----
 
 function bindGrid(el: HTMLElement): void {
+  el.querySelectorAll<HTMLElement>('[data-group]').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      groupBy = tab.dataset.group as 'zone' | 'category';
+      render();
+    });
+  });
   el.querySelectorAll<HTMLElement>('[data-open]').forEach((node) => {
     node.addEventListener('click', () => {
       const plant = plants.find((p) => p.id === node.dataset.open);
@@ -481,6 +521,8 @@ function bindForm(el: HTMLElement): void {
       name: (fd.get('name') as string) || '',
       species: str('species'),
       location: str('location'),
+      zone: str('zone'),
+      category: str('category'),
       status: (fd.get('status') as PlantStatus) || 'healthy',
       light: str('light'),
       water_frequency_days: waterDays ? Number(waterDays) : null,

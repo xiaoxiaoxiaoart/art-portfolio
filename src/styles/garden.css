@@ -432,6 +432,62 @@
   font-style: normal;
 }
 
+/* 分组切换 tab */
+.garden-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.garden-tab {
+  font-family: inherit;
+  font-size: 14px;
+  font-style: normal;
+  background: none;
+  border: 1px solid #ddd;
+  color: var(--text-muted);
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.garden-tab:hover {
+  color: #111;
+}
+
+.garden-tab.active {
+  color: #111;
+  border-color: #111;
+}
+
+/* 分组 */
+.garden-group {
+  margin-bottom: 32px;
+}
+
+.garden-group-title {
+  font-size: 15px;
+  color: #111;
+  font-style: normal;
+  font-weight: 300;
+  margin-bottom: 12px;
+  letter-spacing: 0.05em;
+}
+
+.garden-group-count {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* 卡片补充标签（另一维度） */
+.garden-card-tag {
+  font-size: 12px;
+  font-style: normal;
+  color: var(--text-muted);
+  border: 1px solid #ddd;
+  padding: 1px 6px;
+}
+
 /* 移动端 */
 @media (max-width: 600px) {
   .garden-page {

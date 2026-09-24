@@ -17,6 +17,8 @@ export interface Plant {
   species: string | null;
   photo_url: string | null;
   location: string | null;
+  zone: string | null;
+  category: string | null;
   status: PlantStatus;
   light: string | null;
   water_frequency_days: number | null;
