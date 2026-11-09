@@ -33,7 +33,7 @@ PUBLIC_SUPABASE_ANON_KEY=xxx
 ```
 
 - 本地开发：`.env` 即可，`npm run dev` 会自动读取。
-- Cloudflare Pages 部署：在项目的环境变量设置中添加同名变量。
+- Cloudflare Pages 部署：在项目的环境变量设置中添加同名变量。正式站的 `/garden-api` 只读转发植物列表和养护记录，沿用同一组环境变量和 Supabase 公开权限。
 
 ## 3. 部署定时推送函数
 
@@ -80,6 +80,8 @@ npx supabase functions deploy identify-plant --project-ref <项目引用> --no-v
 ```
 
 4. 部署前端。在「添加植物」中拍照或选图，按页面提示输入识别码，选一个候选并检查填入的名称和学名。照片可继续用作封面。此功能无需新增数据库字段或前端环境变量。
+
+选中候选后，表单优先填中文名。Pl@ntNet 和内置资料未提供中文名时，前端按学名查询 [GBIF](https://techdocs.gbif.org/en/openapi/v1/species)。常见盆栽的养护建议按学名匹配，参考 [NC State Extension](https://plants.ces.ncsu.edu/) 和 [UMN Extension](https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/houseplants/spring-houseplant-care)。浇水天数是可编辑的检查提醒起点，表单保留手填的养护值。
 
 ## 6. 测试
 

@@ -48,10 +48,10 @@ export interface PlantEvent {
 }
 
 const url = import.meta.env.PUBLIC_SUPABASE_URL as string | undefined;
-const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string | undefined;
+export const supabasePublicKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string | undefined;
 
-export const isConfigured = Boolean(url && key);
+export const isConfigured = Boolean(url && supabasePublicKey);
 
 export const supabase: SupabaseClient | null = isConfigured
-  ? createClient(url!, key!)
+  ? createClient(url!, supabasePublicKey!)
   : null;

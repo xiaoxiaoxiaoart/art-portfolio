@@ -1,5 +1,6 @@
 import {
   supabase,
+  supabasePublicKey,
   type Plant,
   type PlantEvent,
   type PlantStatus,
@@ -25,8 +26,30 @@ export interface PlantInput {
   acquired_date?: string | null;
 }
 
+async function readGardenPage<T>(plant?: string): Promise<T[] | undefined> {
+  if (window.location.hostname !== 'xiaoart.top' || !supabasePublicKey) return;
+  const request = new AbortController();
+  const timeout = window.setTimeout(() => request.abort(), 9_000);
+  try {
+    const path = plant ? `/garden-api?plant=${encodeURIComponent(plant)}` : '/garden-api';
+    const response = await fetch(path, {
+      headers: { apikey: supabasePublicKey },
+      signal: request.signal,
+    });
+    if (!response.ok) return;
+    const data: unknown = await response.json();
+    if (Array.isArray(data)) return data as T[];
+  } catch {
+    // 代理不可用时仍可直接连接 Supabase。
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 export async function fetchPlants(): Promise<Plant[]> {
   if (!supabase) return [];
+  const plants = await readGardenPage<Plant>();
+  if (plants) return plants;
   const { data, error } = await supabase
     .from('plants_with_watering_schedule')
     .select('*')
@@ -37,6 +60,8 @@ export async function fetchPlants(): Promise<Plant[]> {
 
 export async function fetchEvents(plantId: string): Promise<PlantEvent[]> {
   if (!supabase) return [];
+  const events = await readGardenPage<PlantEvent>(plantId);
+  if (events) return events;
   const { data, error } = await supabase
     .from('events')
     .select('*')

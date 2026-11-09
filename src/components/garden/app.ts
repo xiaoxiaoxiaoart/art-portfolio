@@ -5,7 +5,8 @@ import type {
   EventType,
 } from '../../lib/supabase';
 import { isConfigured } from '../../lib/supabase';
-import { identifyPlant, prepareIdentificationPhoto } from '../../lib/plant-identification';
+import { findChinesePlantName, identifyPlant, prepareIdentificationPhoto } from '../../lib/plant-identification';
+import { plantCareProfile } from '../../lib/plant-care';
 import {
   fetchPlants,
   fetchEvents,
@@ -46,6 +47,7 @@ let selected: Plant | null = null;
 let editing: Plant | null = null;
 let events: PlantEvent[] = [];
 let loading = true;
+let plantLoadFailed = false;
 let busy = false;
 let errorMsg: string | null = null;
 let groupBy: 'zone' | 'category' = 'zone';
@@ -72,11 +74,12 @@ function escapeHtml(s: string): string {
 
 async function loadPlants(): Promise<void> {
   loading = true;
+  plantLoadFailed = false;
   errorMsg = null;
   try {
     plants = await fetchPlants();
-  } catch (err) {
-    errorMsg = err instanceof Error ? err.message : '加载失败';
+  } catch {
+    plantLoadFailed = true;
   } finally {
     loading = false;
   }
@@ -283,7 +286,7 @@ function groupPlants(list: Plant[], by: 'zone' | 'category'): { key: string; pla
 
 function gridHtml(): string {
   const due = plants.filter(needsWatering);
-  const dueHtml = loading || (errorMsg && !plants.length) ? '' : `<section class="garden-dashboard" aria-labelledby="garden-care-title">
+  const dueHtml = loading || plantLoadFailed ? '' : `<section class="garden-dashboard" aria-labelledby="garden-care-title">
     <h3 id="garden-care-title">今日养护 <span class="garden-group-count">${due.length} 株待检查</span></h3>
     ${due.length ? groupPlants(due, 'zone').map(({ key, plants: group }) => `
       <section class="garden-care-zone">
@@ -314,7 +317,11 @@ function gridHtml(): string {
           )
           .join('');
 
-  return `<div class="garden-toolbar"><h2>我的植物</h2><button class="garden-btn primary" data-action="add">+ 添加植物</button></div>${dueHtml}${tabs}${body}`;
+  const loadError = plantLoadFailed ? `<div class="garden-care-feedback" role="alert">
+    <span class="garden-error">植物列表加载失败，请重试。</span>
+    <button type="button" class="garden-btn" data-action="retry-plants">重新加载</button>
+  </div>` : '';
+  return `<div class="garden-toolbar"><h2>我的植物</h2><button class="garden-btn primary" data-action="add">+ 添加植物</button></div>${loadError}${dueHtml}${tabs}${plantLoadFailed && !plants.length ? '' : body}`;
 }
 
 function cardHtml(p: Plant): string {
@@ -509,6 +516,8 @@ function formHtml(): string {
 // ---- 事件绑定 ----
 
 function bindGrid(el: HTMLElement): void {
+  el.querySelector('[data-action="retry-plants"]')?.addEventListener('click', () => void refreshGrid());
+
   el.querySelectorAll<HTMLElement>('[data-group]').forEach((tab) => {
     tab.addEventListener('click', () => {
       groupBy = tab.dataset.group as 'zone' | 'category';
@@ -647,6 +656,11 @@ function bindPlantIdentification(form: HTMLFormElement) {
   const results = form.querySelector<HTMLElement>('#garden-identification-results')!;
   const name = form.elements.namedItem('name') as HTMLInputElement;
   const species = form.elements.namedItem('species') as HTMLInputElement;
+  const careFields = [
+    'light', 'water_frequency_days', 'dormant_water_frequency_days',
+    'temp_range', 'humidity', 'fertilizer_notes',
+  ] as const;
+  const autoFilled = new Map<string, string>();
   let photoUrl = '';
   let request: AbortController | undefined;
 
@@ -704,22 +718,45 @@ function bindPlantIdentification(form: HTMLFormElement) {
         status.textContent = '没有找到匹配的植物。可以换一张叶片或花朵的清晰照片，也可以手填。';
         return;
       }
-      status.textContent = '请选择最像的一项，填入名称和学名。';
+      status.textContent = '请选择最像的一项，填入名称及可用的养护建议。';
       for (const candidate of response.candidates) {
+        const profile = plantCareProfile(candidate.scientificName);
+        const chineseName = candidate.commonName?.match(/\p{Script=Han}/u)
+          ? candidate.commonName
+          : profile?.chineseName;
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'garden-btn';
         button.textContent = [
-          candidate.commonName,
+          chineseName || candidate.commonName,
           candidate.scientificName,
           `匹配分 ${Math.round(candidate.score * 100)}%`,
         ].filter(Boolean).join(' · ');
-        button.addEventListener('click', () => {
-          name.value = candidate.commonName || candidate.scientificName;
+        button.addEventListener('click', async () => {
+          const fallbackName = candidate.commonName || candidate.scientificName;
+          name.value = chineseName || fallbackName;
           species.value = candidate.scientificName;
+          for (const key of careFields) {
+            const field = form.elements.namedItem(key) as HTMLInputElement | HTMLTextAreaElement;
+            if (field.value.trim() && field.value !== autoFilled.get(key)) {
+              autoFilled.delete(key);
+              continue;
+            }
+            field.value = profile ? String(profile[key]) : '';
+            autoFilled.set(key, field.value);
+          }
           results.replaceChildren();
-          status.textContent = '已填入名称和学名，可修改后再保存。';
+          const summary = profile
+            ? '已填入养护建议。浇水天数是检查提醒，保存前可按盆土和环境调整。'
+            : '暂无该物种的养护资料，可手动填写。';
+          status.textContent = chineseName ? summary : `${summary} 正在查询中文名…`;
           name.focus();
+          if (!chineseName) {
+            const match = await findChinesePlantName(candidate.scientificName, current.signal);
+            if (current.signal.aborted || species.value !== candidate.scientificName) return;
+            if (match && name.value === fallbackName) name.value = match;
+            status.textContent = match ? summary : `${summary} 暂无可核对的中文名。`;
+          }
         });
         results.append(button);
       }
@@ -856,9 +893,14 @@ function bindForm(el: HTMLElement): void {
 
 // ---- 入口 ----
 
-export function init(): void {
+async function refreshGrid(): Promise<void> {
+  const pending = loadPlants();
   render();
-  if (isConfigured) {
-    void loadPlants().finally(() => render());
-  }
+  await pending;
+  if (view === 'grid') render();
+}
+
+export function init(): void {
+  if (isConfigured) void refreshGrid();
+  else render();
 }

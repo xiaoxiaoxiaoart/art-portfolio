@@ -45,3 +45,33 @@ export async function identifyPlant(photo: Blob, code: string, signal: AbortSign
   if (error || !Array.isArray(data?.candidates)) return { error: 'provider' } as const;
   return { candidates: data.candidates };
 }
+
+// GBIF 只收到已选候选的学名，用于补齐 Pl@ntNet 未返回的中文名。
+export async function findChinesePlantName(scientificName: string, signal: AbortSignal): Promise<string | undefined> {
+  if (signal.aborted) return;
+  const request = new AbortController();
+  const abort = () => request.abort();
+  signal.addEventListener('abort', abort, { once: true });
+  const timeout = window.setTimeout(abort, 5_000);
+  try {
+    const query = new URLSearchParams({ name: scientificName, kingdom: 'Plantae', strict: 'true' });
+    const match = await fetch(`https://api.gbif.org/v1/species/match?${query}`, { signal: request.signal });
+    if (!match.ok) return;
+    const { matchType, rank, usageKey, acceptedUsageKey } = await match.json();
+    if (matchType !== 'EXACT' || !['SPECIES', 'SUBSPECIES', 'VARIETY', 'FORM'].includes(rank)) return;
+    const id = acceptedUsageKey ?? usageKey;
+    if (!Number.isSafeInteger(id)) return;
+
+    const names = await fetch(`https://api.gbif.org/v1/species/${id}/vernacularNames?limit=100`, { signal: request.signal });
+    if (!names.ok) return;
+    const { results } = await names.json() as { results: { language?: string; vernacularName: string }[] };
+    return results.find(({ language, vernacularName }) =>
+      /^(zh(?:-[a-z]+)?|zho|chi)$/i.test(language ?? '') && /\p{Script=Han}/u.test(vernacularName),
+    )?.vernacularName.trim();
+  } catch {
+    return undefined;
+  } finally {
+    window.clearTimeout(timeout);
+    signal.removeEventListener('abort', abort);
+  }
+}
