@@ -7,27 +7,6 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_ANON_KEY') ?? '',
 );
 
-interface PlantRow {
-  id: string;
-  name: string;
-  last_watered_at: string | null;
-  water_frequency_days: number | null;
-  dormant: boolean;
-  dormant_water_frequency_days: number | null;
-}
-
-function needsWatering(p: PlantRow): boolean {
-  const freq = p.dormant
-    ? p.dormant_water_frequency_days ?? p.water_frequency_days
-    : p.water_frequency_days;
-  if (!freq) return false;
-  // 设置了周期但从未浇水，视为"该浇水"
-  if (!p.last_watered_at) return true;
-  const due =
-    new Date(p.last_watered_at).getTime() + freq * 86400000;
-  return Date.now() >= due;
-}
-
 Deno.serve(async () => {
   const sendKey = Deno.env.get('SENDKEY');
   if (!sendKey) {
@@ -37,9 +16,10 @@ Deno.serve(async () => {
     });
   }
 
-  const { data: plants, error } = await supabase
-    .from('plants')
-    .select('id, name, last_watered_at, water_frequency_days, dormant, dormant_water_frequency_days');
+  const { data: due, error } = await supabase
+    .from('plants_with_watering_schedule')
+    .select('name')
+    .lte('watering_check_at', 'now');
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -47,8 +27,6 @@ Deno.serve(async () => {
       headers: { 'Content-Type': 'application/json' },
     });
   }
-
-  const due = (plants ?? []).filter(needsWatering);
 
   // 没有需要浇水的植物就不推送，避免每天打扰
   if (due.length === 0) {

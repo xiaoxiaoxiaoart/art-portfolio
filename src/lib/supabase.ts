@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 export type PlantStatus = 'healthy' | 'attention' | 'sick';
 export type EventType =
   | 'water'
+  | 'postpone'
   | 'fertilize'
   | 'repot'
   | 'prune'
@@ -30,6 +31,8 @@ export interface Plant {
   notes: string | null;
   acquired_date: string | null;
   last_watered_at: string | null;
+  watering_postponed_until: string | null;
+  watering_check_at: string | null;
   last_fertilized_at: string | null;
   created_at: string;
 }

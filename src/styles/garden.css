@@ -101,24 +101,72 @@
   font-weight: 300;
 }
 
-.garden-dashboard .due-list {
+.garden-care-zone {
+  margin-top: 14px;
+}
+
+.garden-care-zone h4,
+.garden-comparison h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  color: #555;
+}
+
+.garden-care-zone ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.garden-care-row,
+.garden-care-feedback {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid #e5e5e5;
 }
 
-.garden-dashboard .due-plant {
-  color: var(--g-status-attention);
-  cursor: pointer;
+.garden-care-feedback {
+  margin-bottom: 12px;
+  border-top: none;
+  border-bottom: 1px solid #e5e5e5;
+  font-size: 14px;
 }
 
-.garden-dashboard .due-plant:hover {
+.garden-care-name {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
   color: #111;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 
-.garden-dashboard .none {
-  color: var(--text-muted);
-  font-style: normal;
+.garden-care-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.garden-care-actions .garden-btn,
+.garden-care-feedback .garden-btn {
+  min-height: 44px;
+  padding-inline: 10px;
+}
+
+.garden-btn:disabled,
+.garden-care-name:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 
 /* 植物网格 */
@@ -275,12 +323,82 @@
   aspect-ratio: 1;
   object-fit: cover;
   background: #eee;
-  transition: opacity 0.2s;
-  cursor: pointer;
+  display: block;
 }
 
-.garden-photo:hover {
-  opacity: 0.8;
+.garden-photos figure,
+.garden-compare-pair figure {
+  margin: 0;
+  min-width: 0;
+}
+
+.garden-photos figcaption,
+.garden-compare-pair figcaption {
+  display: grid;
+  gap: 3px;
+  margin-top: 6px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.garden-photos time,
+.garden-compare-pair time {
+  color: #555;
+  font-style: normal;
+}
+
+.garden-photo-choice label {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.garden-compare-hint {
+  margin-bottom: 12px;
+}
+
+.garden-comparison {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #ddd;
+}
+
+.garden-compare-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.garden-compare-pair .garden-photo {
+  object-fit: contain;
+}
+
+.garden-photo-form:not([hidden]) {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin-bottom: 20px;
+  padding: 12px;
+  border: 1px solid #ddd;
+}
+
+.garden-photo-form label {
+  display: grid;
+  gap: 4px;
+  max-width: 100%;
+  font-size: 14px;
+}
+
+.garden-photo-form input {
+  max-width: 100%;
+  font: inherit;
+}
+
+.garden-photo-form .garden-error:empty {
+  display: none;
 }
 
 .garden-detail-section {
@@ -366,6 +484,10 @@
   height: 120px;
   object-fit: cover;
   background: #eee;
+}
+
+.garden-form-photo[hidden] {
+  display: none;
 }
 
 .garden-field {
@@ -507,4 +629,45 @@
     width: 100%;
     height: auto;
   }
+}
+
+.garden-photo-sources,
+.garden-identification-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.garden-identification-results .garden-btn {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.garden-photo-sources .garden-btn,
+.garden-identification-results .garden-btn,
+#garden-identification-retry {
+  min-height: 44px;
+}
+
+.garden-identification-access:not([hidden]) {
+  display: grid;
+  gap: 6px;
+}
+
+.garden-identification-credit {
+  width: fit-content;
+}
+
+#garden-identification-retry {
+  align-self: flex-start;
+}
+
+#garden-identification-status {
+  color: #555;
+  font-style: normal;
+}
+
+#garden-identification-status:empty,
+.garden-identification-results:empty {
+  display: none;
 }

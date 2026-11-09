@@ -6,7 +6,7 @@
 
 ## 1. 建表
 
-打开 Supabase 项目的 **SQL Editor**，执行 [migrations/0001_init.sql](./migrations/0001_init.sql) 的全部内容。
+打开 Supabase 项目的 **SQL Editor**，依次执行 [migrations](./migrations) 中的 SQL 文件。
 
 这会创建：
 
@@ -14,6 +14,14 @@
 - `events` 表（养护事件）
 - RLS 策略（anon 可读写，靠私密 URL 保护）
 - `plant-photos` 存储桶（图片）
+
+### 已有花园升级到今日养护
+
+1. 在 SQL Editor 中执行 [0004_watering_schedule.sql](./migrations/0004_watering_schedule.sql)。它会根据现有浇水事件重算「上次浇水」，并从旧版固定格式的推迟日记恢复推迟时间。缺少浇水事件的植物会显示「未记录」。
+2. 用仓库中的 [提醒函数](./functions/send-watering-reminder/index.ts) 更新已部署的函数。现有项目使用 `dynamic-endpoint`，沿用已有名称和定时任务。
+3. 部署新版前端。页面和提醒函数都读取 `plants_with_watering_schedule`，因此数据库迁移要先执行。三步请在同一次更新中完成。
+
+「明天再看」以北京时间的自然日为准。微信仍在每天北京时间 8 点检查，有待办才发送。
 
 ## 2. 前端环境变量
 
@@ -25,7 +33,7 @@ PUBLIC_SUPABASE_ANON_KEY=xxx
 ```
 
 - 本地开发：`.env` 即可，`npm run dev` 会自动读取。
-- Vercel 部署：在 Vercel 项目 **Settings → Environment Variables** 里添加同名变量。
+- Cloudflare Pages 部署：在项目的环境变量设置中添加同名变量。
 
 ## 3. 部署定时推送函数
 
@@ -61,7 +69,19 @@ npx supabase secrets set SENDKEY=<你的SENDKEY>
 schedule = "0 0 * * *"
 ```
 
-## 5. 测试
+## 5. 启用拍照识别
+
+1. 在 [Pl@ntNet 开发者后台](https://my.plantnet.org/) 获取 API 密钥。
+2. 在本项目 Supabase 后台的 **Edge Functions → Secrets** 添加 `PLANTNET_API_KEY`，并添加 `GARDEN_IDENTIFICATION_CODE` 作为花园的识别码。识别码使用随机值，例如用 `openssl rand -hex 16` 生成。两个值都只存到服务端。
+3. 部署 [identify-plant](./functions/identify-plant/index.ts)。在后台将该函数的 **Verify JWT** 关闭，或使用以下命令部署。花园目前没有账户登录，函数会校验识别码，通过后才向 Pl@ntNet 发送照片。
+
+```sh
+npx supabase functions deploy identify-plant --project-ref <项目引用> --no-verify-jwt
+```
+
+4. 部署前端。在「添加植物」中拍照或选图，按页面提示输入识别码，选一个候选并检查填入的名称和学名。照片可继续用作封面。此功能无需新增数据库字段或前端环境变量。
+
+## 6. 测试
 
 - 在 Dashboard 的函数页面点 **Invoke**（或本地 `npx supabase functions serve`），确认微信收到 Server 酱推送。
 - 打开植物页面 `你的域名/garden`，添加植物、记录浇水、上传照片，确认数据落库、跨设备同步。
