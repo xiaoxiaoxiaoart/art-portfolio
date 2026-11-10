@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>關於蘭頓螞蟻 — 教程</title>
+<style>
+  @font-face {
+    font-family: 'Sarasa Fixed Slab SC';
+    src: url('/langton-ant/fonts/sarasafixedslabsc-light.woff2') format('woff2');
+    font-weight: 300; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'Sarasa Fixed Slab SC';
+    src: url('/langton-ant/fonts/sarasafixedslabsc-lightitalic.woff2') format('woff2');
+    font-weight: 300; font-style: italic; font-display: swap;
+  }
+  @font-face {
+    font-family: 'Sarasa Fixed Slab SC';
+    src: url('/langton-ant/fonts/SarasaFixedSlabSC-ExtraLight.woff2') format('woff2');
+    font-weight: 200; font-style: normal; font-display: swap;
+  }
+
+  :root {
+    --bg: #fafafa;
+    --text: #333;
+    --text-secondary: #555;
+    --text-muted: #999;
+    --border: #e8e8e8;
+    --sidebar-width: 200px;
+    --content-padding: 40px;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    font-family: 'Sarasa Fixed Slab SC', monospace;
+    font-weight: 300; font-style: italic;
+    background: var(--bg); color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  .page {
+    display: flex; min-height: 100vh;
+  }
+
+  /* ——— 侧边栏 ——— */
+  .sidebar {
+    width: var(--sidebar-width); flex-shrink: 0;
+    padding: var(--content-padding) 28px;
+    display: flex; flex-direction: column; gap: 4px;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .sidebar .logo {
+    display: flex; flex-direction: column; margin-bottom: 28px;
+    font-style: normal; font-size: 22px; letter-spacing: 0.08em;
+    line-height: 1.25; color: #111;
+  }
+  .sidebar .logo .sub {
+    font-size: 12px; color: var(--text-muted);
+    font-style: italic; letter-spacing: 0.04em;
+  }
+  .sidebar .logo:hover { opacity: 0.7; }
+
+  .sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar nav a {
+    font-size: 15px; color: var(--text-muted);
+    padding: 3px 0; transition: color 0.2s;
+  }
+  .sidebar nav a:hover { color: #111; }
+
+  .back-link {
+    margin-top: auto; font-size: 13px; color: var(--text-muted);
+    padding: 3px 0; transition: color 0.2s, border-color 0.2s;
+    border-bottom: 1px solid var(--border); text-decoration: none;
+  }
+  .back-link:hover { color: #111; border-color: #ccc; }
+
+  /* ——— 内容区 ——— */
+  .content {
+    flex: 1; padding: var(--content-padding) 48px var(--content-padding) 0;
+    min-width: 0; max-width: 780px;
+  }
+
+  section { margin-bottom: 48px; }
+  section h2 {
+    font-size: 20px; font-style: normal; font-weight: 300;
+    color: #111; margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+  section h3 {
+    font-size: 15px; font-style: normal; font-weight: 300;
+    color: var(--text); margin: 20px 0 10px;
+  }
+  section p {
+    font-size: 14px; line-height: 1.85; color: var(--text-secondary);
+    margin-bottom: 14px;
+  }
+  section p:last-child { margin-bottom: 0; }
+
+  section ul {
+    font-size: 14px; line-height: 1.85; color: var(--text-secondary);
+    padding-left: 20px; margin-bottom: 14px;
+  }
+  section ul li { margin-bottom: 6px; }
+
+  .rule-diagram {
+    display: flex; gap: 24px; align-items: center;
+    margin: 20px 0; flex-wrap: wrap;
+  }
+  .rule-card {
+    border: 1px solid var(--border); padding: 20px 24px;
+    text-align: center; min-width: 120px;
+  }
+  .rule-card .cell {
+    width: 48px; height: 48px; margin: 0 auto 10px;
+    border: 1px solid var(--border);
+  }
+  .rule-card .cell.white { background: #fafafa; }
+  .rule-card .cell.black { background: #2d2d2d; }
+  .rule-card .label {
+    font-size: 13px; font-style: normal; color: var(--text);
+    margin-bottom: 4px;
+  }
+  .rule-card .action {
+    font-size: 12px; color: var(--text-muted);
+  }
+
+  .arrow-symbol {
+    font-size: 20px; color: var(--text-muted);
+    font-style: normal;
+  }
+
+  .highlight {
+    background: #f3f3f3; padding: 2px 6px;
+    font-style: normal; font-size: 13px;
+  }
+
+  hr {
+    border: none; border-top: 1px solid var(--border);
+    margin: 36px 0;
+  }
+
+  .footnotes {
+    font-size: 12px; color: var(--text-muted); line-height: 1.8;
+  }
+  .footnotes a { text-decoration: underline; }
+  .footnotes a:hover { color: #111; }
+
+  @media (max-width: 700px) {
+    .page { flex-direction: column; }
+    .sidebar {
+      width: 100%; height: auto; position: static;
+      padding: 20px 20px 0; gap: 8px;
+    }
+    .sidebar .logo { margin-bottom: 12px; flex-direction: row; gap: 8px; align-items: baseline; }
+    .sidebar nav { flex-direction: row; gap: 16px; }
+    .back-link { margin-top: 0; }
+    .content { padding: 24px 20px; max-width: 100%; }
+    .rule-diagram { gap: 12px; }
+    .rule-card { padding: 12px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<aside class="sidebar">
+  <a href="/langton-ant/" class="logo">
+    Langton 蚂蚁
+    <span class="sub">Langton's Ant</span>
+  </a>
+  <nav>
+    <a href="#rules">规则</a>
+    <a href="#emergence">涌现行为</a>
+    <a href="#math">数学背景</a>
+    <a href="#variants">变体</a>
+    <a href="#further">延伸阅读</a>
+  </nav>
+  <a href="/langton-ant/" class="back-link">← 返回模拟</a>
+</aside>
+
+<main class="content">
+
+<section id="intro">
+  <h2>什么是 Langton 蚂蚁？</h2>
+  <p>
+    Langton 蚂蚁（Langton's Ant）是由 Chris Langton 在 1986 年提出的二维细胞自动机。它用极其简单的规则定义了一只虚拟"蚂蚁"在无限网格上的行为——然而正是这种简单规则，产生了惊人的复杂性和涌现行为。
+  </p>
+  <p>
+    它是计算理论中<strong>涌现</strong>（emergence）概念的经典演示：微观层面的简单规则如何产生宏观层面不可预测的复杂模式。
+  </p>
+</section>
+
+<section id="rules">
+  <h2>规则</h2>
+  <p>蚂蚁在由正方形格子组成的无限平面上移动。每个格子有两种状态：白色或黑色。每一步：</p>
+
+  <div class="rule-diagram">
+    <div class="rule-card">
+      <div class="cell white"></div>
+      <div class="label">白色格子</div>
+      <div class="action">右转 90° → 格子变黑 → 前进一步</div>
+    </div>
+    <span class="arrow-symbol">+</span>
+    <div class="rule-card">
+      <div class="cell black"></div>
+      <div class="label">黑色格子</div>
+      <div class="action">左转 90° → 格子变白 → 前进一步</div>
+    </div>
+  </div>
+
+  <p>用更简洁的符号：<span class="highlight">R</span> = 右转，<span class="highlight">L</span> = 左转。规则可表示为 <span class="highlight">RL</span>——白色格子→R，黑色格子→L。</p>
+</section>
+
+<section id="emergence">
+  <h2>涌现行为</h2>
+  <p>Langton 蚂蚁的行为分为三个明显阶段：</p>
+
+  <h3>第一阶段：简单模式（0–500 步）</h3>
+  <p>蚂蚁在原点附近移动，创造小而对称的几何图案。行为看起来简单、可预测。</p>
+
+  <h3>第二阶段：混沌（500–10,000 步）</h3>
+  <p>图案迅速变得混乱。蚂蚁的移动轨迹看似完全随机——没有明显的规律，没有重复的模式。这个阶段持续很长时间，让人觉得蚂蚁将永远混沌下去。</p>
+
+  <h3>第三阶段：高速公路（约 10,000 步后）</h3>
+  <p>突然之间，蚂蚁开始建造一条周期性的"高速公路"——一个 104 步的循环模式，蚂蚁不断重复，同时向斜上方无限延伸。这条公路是对称的、可预测的，而且一旦开始就不会停止。</p>
+
+  <p>从完全确定的简单规则中，涌现出不可预测的混沌，最终又自发地产生有序结构——这就是 Langton 蚂蚁如此迷人的原因。</p>
+</section>
+
+<section id="math">
+  <h2>数学背景</h2>
+  <p>Langton 蚂蚁是<strong>细胞自动机</strong>（cellular automaton）的一种。细胞自动机由离散的格子单元组成，每个单元根据其邻居的状态按照固定规则更新。最著名的细胞自动机是 John Conway 的"生命游戏"（Game of Life）。</p>
+
+  <p>但从数学角度来看，Langton 蚂蚁比生命游戏更简单——每次只有一只蚂蚁（一个"活动单元"）在移动，格子本身不会自行更新。</p>
+
+  <p>一些已知的数学事实：</p>
+  <ul>
+    <li>RL 规则下，蚂蚁的轨迹总是<strong>无界的</strong>——它不会被困在有限区域内。这是 2011 年被严格证明的。</li>
+    <li>不同的 RL 序列（如 LLRR、RLR）会产生完全不同的行为——有些规则下蚂蚁会建造对称图案，有些规则下会混沌，有些会建造不同形状的"高速公路"。</li>
+    <li>Langton 蚂蚁的计算能力等价于<strong>图灵机</strong>——在适当的初始条件下，它可以实现任何计算。这意味着蚂蚁的轨迹是不可预测的（不可判定性）。</li>
+  </ul>
+</section>
+
+<section id="variants">
+  <h2>变体</h2>
+
+  <h3>多蚂蚁</h3>
+  <p>同时放入多只蚂蚁，共享同一个网格。每只蚂蚁独立遵循相同的规则，但它们在彼此留下的痕迹上行走，产生更复杂的互动模式。偶尔会出现"协作"行为，多只蚂蚁共同建造复杂结构。</p>
+
+  <h3>多色 / 多状态</h3>
+  <p>格子不再是简单的黑白两色，而是有 3、4 甚至更多种颜色循环。每种颜色对应不同的转向规则，用 RL 字符串编码。例如 <span class="highlight">RLR</span> 表示：颜色0→R，颜色1→L，颜色2→R。多色 Langton 蚂蚁能产生极其丰富的几何图案。</p>
+
+  <h3>三维 Langton 蚂蚁</h3>
+  <p>将规则扩展到三维立方体网格。蚂蚁有 6 个可能的移动方向，在一个方向环中切换。三维版本的行为更加复杂，产生的三维结构具有雕塑般的视觉美感。</p>
+
+  <h3>其他变体</h3>
+  <ul>
+    <li><strong>六边形网格</strong>：在六边形网格上运行，蚂蚁有 6 个可选方向</li>
+    <li><strong>多转向角度</strong>：不只 90° 转向，可以定义 45°、60° 等任意角度</li>
+    <li><strong>概率性规则</strong>：以一定概率选择转向方向，引入随机性</li>
+  </ul>
+</section>
+
+<section id="further">
+  <h2>延伸阅读</h2>
+  <div class="footnotes">
+    <p>Langton, C. G. (1986). "Studying artificial life with cellular automata." <em>Physica D: Nonlinear Phenomena</em>, 22(1-3), 120–149.</p>
+    <p>Gajardo, A., Moreira, A., & Goles, E. (2001). "Complexity of Langton's ant." <em>Discrete Applied Mathematics</em>, 117(1-3), 41–50.</p>
+    <p>Wikipedia: <a href="https://en.wikipedia.org/wiki/Langton%27s_ant" target="_blank" rel="noopener">Langton's Ant</a></p>
+    <p>Prusinkiewicz, P. & Lindenmayer, A. (1990). <em>The Algorithmic Beauty of Plants</em>. Springer-Verlag. — 关于涌现和 L-system 的经典著作。</p>
+  </div>
+</section>
+
+</main>
+</div>
+</body>
+</html>

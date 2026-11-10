@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>蘭頓螞蟻</title>
+<style>
+  @font-face {
+    font-family: 'Sarasa Fixed Slab SC';
+    src: url('/langton-ant/fonts/sarasafixedslabsc-light.woff2') format('woff2');
+    font-weight: 300; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'Sarasa Fixed Slab SC';
+    src: url('/langton-ant/fonts/sarasafixedslabsc-lightitalic.woff2') format('woff2');
+    font-weight: 300; font-style: italic; font-display: swap;
+  }
+  @font-face {
+    font-family: 'Sarasa Fixed Slab SC';
+    src: url('/langton-ant/fonts/SarasaFixedSlabSC-ExtraLight.woff2') format('woff2');
+    font-weight: 200; font-style: normal; font-display: swap;
+  }
+
+  :root {
+    --bg: #fafafa;
+    --text: #333;
+    --text-muted: #999;
+    --border: #e8e8e8;
+    --panel-bg: rgba(250,250,250,0.94);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    font-family: 'Sarasa Fixed Slab SC', monospace;
+    font-weight: 300; font-style: italic;
+    background: var(--bg); color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none;
+  }
+
+  canvas {
+    display: block; position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    cursor: grab;
+  }
+  canvas:active { cursor: grabbing; }
+
+  .top-bar {
+    position: fixed; top: 36px; left: 36px;
+    pointer-events: none; z-index: 10;
+  }
+  .top-bar > * { pointer-events: auto; }
+
+  .title {
+    font-size: 22px; color: #b22222;
+    letter-spacing: 0.08em; font-style: normal; line-height: 1.1;
+  }
+  .title .en {
+    display: block; font-size: 12px; color: var(--text-muted);
+    font-style: italic; letter-spacing: 0.04em; margin-top: 2px;
+  }
+
+  .corner-links {
+    position: fixed; top: 36px; right: 36px;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+    z-index: 10;
+  }
+  .corner-links a {
+    font-size: 13px; color: #b22222; text-decoration: none;
+    transition: color 0.2s, border-color 0.2s; letter-spacing: 0.04em;
+    border-bottom: 1px solid #b2222230;
+  }
+  .corner-links a:hover { color: #8b0000; border-color: #8b0000; }
+
+  .step-counter {
+    font-size: 13px; color: var(--text-muted);
+    text-align: right; line-height: 1.6;
+  }
+  .step-counter .num { font-style: normal; color: var(--text); font-size: 18px; }
+
+  .menu-toggle {
+    position: fixed; bottom: 36px; right: 36px; z-index: 10;
+    font-family: inherit; font-weight: 300; font-style: normal;
+    font-size: 13px; letter-spacing: 0.04em;
+    background: #333; border: 1px solid #333;
+    color: #fafafa; padding: 7px 16px; cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .menu-toggle:hover { background: #555; border-color: #555; }
+
+  .panel {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    padding: 28px 40px 32px;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+    display: flex; align-items: center; gap: 24px;
+    flex-wrap: wrap; font-style: normal;
+  }
+  .panel.open { transform: translateY(0); }
+
+  .panel .close-btn {
+    position: absolute; top: 16px; right: 40px;
+    font-size: 18px; color: var(--text-muted);
+    background: none; border: none; cursor: pointer;
+    font-family: inherit; padding: 4px; transition: color 0.2s;
+  }
+  .panel .close-btn:hover { color: var(--text); }
+
+  .panel button {
+    font-family: inherit; font-weight: 300; font-style: normal;
+    font-size: 15px; letter-spacing: 0.04em;
+    background: rgba(0,0,0,0.06); border: 1px solid #ccc;
+    color: var(--text); padding: 8px 18px; cursor: pointer;
+    transition: background 0.2s, border-color 0.2s; white-space: nowrap;
+  }
+  .panel button:hover { background: rgba(0,0,0,0.12); border-color: #aaa; }
+  .panel button.primary {
+    background: #333; color: #fafafa; border-color: #333;
+  }
+  .panel button.primary:hover { background: #555; border-color: #555; }
+
+  .panel .sep {
+    width: 1px; height: 22px; background: var(--border); margin: 0 2px;
+  }
+
+  .panel label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--text-muted);
+    white-space: nowrap; letter-spacing: 0.03em;
+  }
+  .panel label span.val {
+    font-style: normal; color: var(--text); min-width: 22px; text-align: right;
+  }
+
+  .panel select {
+    font-family: inherit; font-weight: 300; font-style: normal;
+    font-size: 13px; color: var(--text);
+    background: none; border: 1px solid var(--border);
+    padding: 5px 8px; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+    letter-spacing: 0.03em;
+  }
+  .panel select:focus { outline: none; border-color: #ccc; }
+
+  .panel .rule-input {
+    font-family: inherit; font-weight: 300; font-style: normal;
+    font-size: 13px; color: var(--text);
+    background: none; border: 1px solid var(--border);
+    padding: 5px 8px; width: 80px; letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .panel .rule-input:focus { outline: none; border-color: #ccc; }
+
+  /* 沙盒蚂蚁行 */
+  #ant-rows {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .ant-row {
+    display: flex; align-items: center; gap: 5px;
+    width: 100%; flex-wrap: wrap;
+  }
+  .ant-dot {
+    width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+  .ant-row .rule-input { width: 52px; }
+  .ant-row select {
+    font-family: inherit; font-weight: 300; font-style: normal;
+    font-size: 12px; color: var(--text);
+    background: none; border: 1px solid var(--border);
+    padding: 3px 4px; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+  }
+  .ant-row input[type="range"] { width: 44px; }
+  .ant-row input[type="checkbox"] { width: 12px; height: 12px; cursor: pointer; accent-color: var(--text); margin: 0; }
+  .ant-row .ant-del {
+    font-size: 14px; color: var(--text-muted);
+    background: none; border: none; cursor: pointer;
+    padding: 0 2px; line-height: 1;
+  }
+  .ant-row .ant-del:hover { color: var(--text); }
+  .ant-lbl {
+    font-size: 11px; color: var(--text-muted);
+    font-style: normal; letter-spacing: 0.02em;
+  }
+  .ant-add-btn {
+    font-family: inherit; font-weight: 300; font-style: normal;
+    font-size: 14px; color: var(--text);
+    background: rgba(0,0,0,0.06); border: 1px solid #ccc;
+    padding: 7px 14px; cursor: pointer;
+  }
+  .ant-add-btn:hover { background: rgba(0,0,0,0.12); border-color: #aaa; }
+
+  .panel input[type="checkbox"] {
+    width: 14px; height: 14px; cursor: pointer; accent-color: var(--text);
+    margin-right: 4px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none; width: 80px; height: 2px;
+    background: var(--border); outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px;
+    background: var(--text); cursor: pointer;
+  }
+
+  @media (max-width: 700px) {
+    .top-bar { top: 18px; left: 18px; }
+    .corner-links { top: 18px; right: 18px; }
+    .menu-toggle { bottom: 18px; right: 18px; }
+    .title { font-size: 18px; }
+    .panel { padding: 16px 20px 20px; gap: 12px; }
+    .panel .close-btn { top: 8px; right: 20px; }
+    .panel .sep { display: none; }
+    .panel button { font-size: 14px; padding: 7px 14px; }
+    .panel select { font-size: 12px; }
+    .panel .rule-input { width: 60px; }
+    input[type="range"] { width: 60px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="top-bar">
+  <div class="title">蘭頓螞蟻<span class="en">Langton's Ant</span></div>
+</div>
+
+<div class="corner-links">
+  <div class="step-counter"><span class="num" id="stat-steps">0</span><br>步</div>
+  <a href="/langton-ant/learn/">了解更多 →</a>
+</div>
+
+<button class="menu-toggle" id="menu-toggle">控制</button>
+
+<div class="panel" id="panel">
+  <button class="close-btn" id="panel-close">×</button>
+  <button class="primary" id="btn-play">开始</button>
+  <button id="btn-step">单步</button>
+  <button id="btn-clear" style="display:none">清除</button>
+  <button id="btn-reset">重置</button>
+  <button id="btn-record">⬤ 录制</button>
+
+  <span class="sep"></span>
+
+  <label>速度 <input type="range" id="speed" min="1" max="100" value="30"><span class="val" id="speed-label">30</span></label>
+  <label>格子 <input type="range" id="cell-size" min="2" max="20" value="8"><span class="val" id="cell-size-label">8</span></label>
+  <label>世界 <select id="sel-world"><option value="50">50</option><option value="100">100</option><option value="150" selected>150</option><option value="250">250</option><option value="400">400</option><option value="800">800</option></select></label>
+
+  <span class="sep"></span>
+
+  <div style="width:100%;height:0"></div>
+
+  <label>模式 <select id="sel-mode"><option value="classic">经典</option><option value="multi-ant">多蚂蚁</option><option value="sandbox">沙盒</option><option value="god">上帝</option></select></label>
+  <label>角度 <select id="sel-angle"><option value="4">90°</option><option value="6">60°</option><option value="8">45°</option><option value="12">30°</option></select></label>
+  <label id="lbl-rule-global">规则 <input class="rule-input" id="inp-rule" value="RL" maxlength="40" spellcheck="false"></label>
+  <select id="sel-preset" style="display:none"><option value="">预设▾</option></select>
+  <label style="cursor:pointer"><input type="checkbox" id="chk-prob"> 概率</label>
+  <label id="lbl-prob-bias" style="display:none">偏向 <input type="range" id="inp-prob-bias" min="0" max="100" value="80"><span class="val" id="prob-bias-label">80</span>%</label>
+  <label id="lbl-straight" style="display:none">直行 <input type="range" id="inp-straight" min="0" max="100" value="10"><span class="val" id="straight-label">10</span>%</label>
+  <label id="lbl-ants" style="display:none">蚂蚁数 <input type="range" id="inp-ants" min="1" max="10" value="1"><span class="val" id="ants-label">1</span></label>
+  <button id="btn-place" style="display:none">放置</button>
+  <select id="sel-palette" style="display:none"><option>低饱和</option><option>高饱和</option><option>荧光</option><option>莫兰迪</option></select>
+  <button id="btn-random-colors" style="display:none">随机配色</button>
+  <button id="btn-export" style="display:none">导出</button>
+  <button id="btn-import" style="display:none" onclick="document.getElementById('import-file').click()">导入</button>
+  <input type="file" id="import-file" style="display:none" accept=".json">
+  <div id="ant-rows" style="display:none;width:100%"></div>
+</div>
+
+<script>
+// =============================================
+// 调色板
+// =============================================
+const stateColors = [null,'#2d2d2d','#b84040','#3b7cb8','#4a9e4a','#d4822e','#8b5ea8','#3b9e9e','#d4608b'];
+const PALETTES = {
+  '低饱和': [
+    { ant: '#d94e3d', trail: '#3dc8d9' },
+    { ant: '#c99d32', trail: '#3247c9' },
+    { ant: '#3d6fd9', trail: '#d99f3d' },
+    { ant: '#4a9e5a', trail: '#d94d7e' },
+    { ant: '#d97d3d', trail: '#3d99d9' },
+    { ant: '#8b5ea8', trail: '#7ba84a' },
+  ],
+  '高饱和': [
+    { ant: '#e82c23', trail: '#23dfe8' },
+    { ant: '#e8b823', trail: '#2353e8' },
+    { ant: '#2350e8', trail: '#e8bb23' },
+    { ant: '#23c84a', trail: '#e823a1' },
+    { ant: '#e87823', trail: '#2393e8' },
+    { ant: '#8b23e8', trail: '#b7e823' },
+  ],
+  '荧光': [
+    { ant: '#ff2d78', trail: '#2dffb4' },
+    { ant: '#e0ff2d', trail: '#2d4dff' },
+    { ant: '#2df0ff', trail: '#ff3d2d' },
+    { ant: '#2dff5e', trail: '#ff2dd0' },
+    { ant: '#ff7b2d', trail: '#2dacff' },
+    { ant: '#b42dff', trail: '#a5ff2d' },
+  ],
+  '莫兰迪': [
+    { ant: '#c4a0a0', trail: '#a0c4c4' },
+    { ant: '#b8b0a0', trail: '#a0a8b8' },
+    { ant: '#a0a8c4', trail: '#c4bca0' },
+    { ant: '#a0c4a8', trail: '#c4a0bc' },
+    { ant: '#c4a880', trail: '#a0bcc4' },
+    { ant: '#b0a0c4', trail: '#b4c4a0' },
+  ],
+};
+let antPalette = PALETTES['低饱和'];
+
+function applyPalette(name) {
+  antPalette = PALETTES[name];
+  for (let i = 0; i < sim.ants.length; i++) {
+    const cfg = antPalette[i % antPalette.length];
+    sim.ants[i].color = cfg.ant;
+    sim.ants[i].trailColor = cfg.trail;
+  }
+  if (sim.mode === 'sandbox' || sim.mode === 'god') rebuildAntRows();
+  draw();
+}
+
+function exportSandbox() {
+  const data = {
+    palette: Object.keys(PALETTES).find(k => PALETTES[k] === antPalette) || '低饱和',
+    world: sim.worldH,
+    cellSize: Math.round(cellSize),
+    speed: speedInput.value,
+    globalRule: inpRule.value,
+    globalAngle: sim.angle,
+    globalProbMode: probMode,
+    globalProbBias: probBias,
+    globalStraightProb: straightProb,
+    ants: sim.ants.map(a => ({
+      rule: a.rule, angle: a.angle, palIdx: a.palIdx,
+      probMode: a.probMode, probBias: a.probBias,
+      straightProb: a.straightProb, speed: a.speed,
+      x: a.x, y: a.y, dir: a.dir,
+    })),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'langton-sandbox.json'; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importSandbox(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      // 恢复全局设置
+      applyPalette(data.palette || '低饱和');
+      selPalette.value = data.palette || '低饱和';
+      selWorld.value = data.world || 150;
+      cellSize = data.cellSize || 8;
+      cellSizeInput.value = cellSize; cellSizeLabel.textContent = cellSize;
+      speedInput.value = data.speed || 30; speedLabel.textContent = data.speed || 30;
+      inpRule.value = data.globalRule || 'RL';
+      selAngle.value = data.globalAngle || 4;
+      sim.angle = data.globalAngle || 4; sim.dirs = DIR_SETS[sim.angle];
+      probMode = data.globalProbMode || false;
+      chkProb.checked = probMode;
+      probBias = data.globalProbBias || 0.8;
+      inpProbBias.value = Math.round(probBias * 100); probBiasLabel.textContent = Math.round(probBias * 100);
+      straightProb = data.globalStraightProb || 0.1;
+      inpStraight.value = Math.round(straightProb * 100); straightLabel.textContent = Math.round(straightProb * 100);
+      lblProbBias.style.display = probMode ? '' : 'none';
+      lblStraight.style.display = probMode ? '' : 'none';
+      sim.rule = inpRule.value;
+      // 恢复世界尺寸
+      sim.worldH = data.world || 150;
+      sim.worldW = Math.round(sim.worldH * window.innerWidth / window.innerHeight);
+      // 恢复蚂蚁
+      sim.ants = []; sim.cells.clear(); sim.steps = 0;
+      for (const ad of (data.ants || [])) {
+        const a = sim._makeAnt(ad.x, ad.y, ad.rule);
+        a.angle = ad.angle; a.dirs = DIR_SETS[ad.angle];
+        a.palIdx = ad.palIdx != null ? ad.palIdx : 0;
+        const cfg = antPalette[ad.palIdx % antPalette.length];
+        a.color = cfg.ant; a.trailColor = cfg.trail;
+        a.probMode = ad.probMode; a.probBias = ad.probBias;
+        a.straightProb = ad.straightProb; a.speed = ad.speed || 5;
+        a.x = ad.x; a.y = ad.y; a.dir = ad.dir;
+        sim.ants.push(a);
+      }
+      sim.numAnts = sim.ants.length;
+      inpAnts.value = sim.numAnts; antsLabel.textContent = sim.numAnts;
+      offsetX = -Math.floor(sim.worldW / 2) * cellSize;
+      offsetY = -Math.floor(sim.worldH / 2) * cellSize;
+      rebuildAntRows(); draw();
+    } catch(e) { alert('导入失败：' + e.message); }
+  };
+  reader.readAsText(file);
+}
+
+function randomizeColors() {
+  // 在当前 palette 中随机打乱蚂蚁的颜色分配
+  const used = new Set();
+  for (const ant of sim.ants) {
+    let idx;
+    do { idx = Math.floor(Math.random() * antPalette.length); }
+    while (used.has(idx) && used.size < antPalette.length);
+    used.add(idx);
+    const cfg = antPalette[idx];
+    ant.color = cfg.ant;
+    ant.trailColor = cfg.trail;
+  }
+  if (sim.mode === 'sandbox' || sim.mode === 'god') rebuildAntRows();
+  draw();
+}
+
+// 方向组：4方向(90°) / 6方向(60°) / 8方向(45°) / 12方向(30°)
+function buildDirs(n) {
+  const dirs = [];
+  for (let k = 0; k < n; k++) {
+    const rad = k * 2 * Math.PI / n - Math.PI / 2; // 从北(上)开始
+    const scale = n === 6 || n === 12 ? 2 : 1;
+    dirs.push([Math.round(scale * Math.cos(rad)), Math.round(scale * Math.sin(rad))]);
+  }
+  return dirs;
+}
+const DIR_SETS = { 4: buildDirs(4), 6: buildDirs(6), 8: buildDirs(8), 12: buildDirs(12) };
+
+function lighten(hex, amount) {
+  if (!hex || hex[0] !== '#') return hex;
+  const r = Math.min(255, Math.max(0, parseInt(hex.slice(1,3), 16) + amount));
+  const g = Math.min(255, Math.max(0, parseInt(hex.slice(3,5), 16) + amount));
+  const b = Math.min(255, Math.max(0, parseInt(hex.slice(5,7), 16) + amount));
+  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+function trailVariant(base, state, numStates) {
+  if (state <= 1 || numStates <= 2) return base;
+  const step = Math.floor((state - 1) / 2) + 1;
+  const amount = step * 22;
+  return state % 2 === 0 ? lighten(base, amount) : lighten(base, -amount);
+}
+
+// =============================================
+// 模拟引擎
+// =============================================
+class Simulation {
+  constructor(mode, rule, numAnts, worldW, worldH, angle) {
+    this.mode = mode;
+    this.rule = rule;
+    this.numAnts = numAnts;
+    this.numStates = rule.length;
+    this.angle = angle || 4;
+    this.dirs = DIR_SETS[this.angle];
+    this.worldW = worldW || 200;
+    this.worldH = worldH || 200;
+    this.cells = new Map();
+    this.ants = [];
+    this.steps = 0;
+    this._initAnts();
+  }
+
+  _wrap(x, y) {
+    return {
+      x: ((x % this.worldW) + this.worldW) % this.worldW,
+      y: ((y % this.worldH) + this.worldH) % this.worldH,
+    };
+  }
+
+  _initAnts() {
+    this.ants = [];
+    const cx = Math.floor(this.worldW / 2);
+    const cy = Math.floor(this.worldH / 2);
+    for (let i = 0; i < this.numAnts; i++) {
+      const cfg = antPalette[i % antPalette.length];
+      this.ants.push(this._makeAnt(cx + i * 2, cy, this.rule));
+    }
+  }
+
+  _makeAnt(x, y, rule) {
+    const idx = this.ants.length % antPalette.length;
+    const cfg = antPalette[idx];
+    const angle = this.angle;
+    const initDir = this.mode === 'god' ? 1 : Math.floor(Math.random() * angle); // 上帝模式固定朝右(东)
+    return {
+      x, y, dir: initDir,
+      color: cfg.ant, trailColor: cfg.trail, palIdx: idx,
+      rule, angle, dirs: DIR_SETS[angle],
+      probMode: probMode, probBias, straightProb,
+      speed: 5, state: 0,
+    };
+  }
+
+  addAnt(x, y, rule) {
+    this.ants.push(this._makeAnt(x, y, rule || this.rule));
+    this.numAnts = this.ants.length;
+  }
+
+  removeAnt(idx) {
+    this.ants.splice(idx, 1);
+    this.numAnts = this.ants.length;
+  }
+
+  clearCells() {
+    this.cells.clear();
+    this.steps = 0;
+  }
+
+  step() { this._step2D(); this.steps++; }
+
+  _step2D() {
+    for (const ant of this.ants) {
+      const isSand = this.mode === 'sandbox' || this.mode === 'god';
+      const rule = isSand ? ant.rule : this.rule;
+      const N = isSand ? ant.angle : this.angle;
+      const dirs = isSand ? ant.dirs : this.dirs;
+      // 沙盒和上帝模式用 per-ant 概率，经典/多蚂蚁用全局概率
+      const pm = isSand ? ant.probMode : probMode;
+      const pb = isSand ? ant.probBias : probBias;
+      const sp = isSand ? ant.straightProb : straightProb;
+      const loops = isSand ? ant.speed : 1;
+      const isGod = this.mode === 'god';
+
+      for (let s = 0; s < loops; s++) {
+        const key = `${ant.x},${ant.y}`;
+        const raw = this.cells.get(key);
+        const cellState = (this.mode !== 'classic' && raw && typeof raw === 'object') ? raw.s : (raw || 0);
+
+        let turn, numCellColors, nextCell, nextAntState;
+        if (isGod) {
+          const segments = ant.rule.split('|');
+          if (ant.state == null) ant.state = 0;
+          const seg = segments[ant.state % segments.length] || 'R00';
+          const groupLen = 3;
+          const nColors = Math.floor(seg.length / groupLen);
+          if (nColors < 1) {
+            // 兼容旧格式（如 RL、LLRR）：整段作为单字符规则
+            numCellColors = seg.length;
+            turn = seg[cellState % numCellColors] || 'R';
+            nextCell = (cellState + 1) % numCellColors;
+            nextAntState = (ant.state + 1) % segments.length;
+          } else {
+            numCellColors = nColors;
+            const idx = (cellState % numCellColors) * groupLen;
+            turn = seg[idx] || 'R';
+            nextAntState = parseInt(seg[idx + 1]) || 0;
+            const writeColor = parseInt(seg[idx + 2]);
+            nextCell = isNaN(writeColor) ? (cellState + 1) % numCellColors : writeColor;
+          }
+        } else {
+          numCellColors = rule.length;
+          turn = rule[cellState % rule.length] || 'R';
+          nextCell = (cellState + 1) % numCellColors;
+        }
+
+        // 转向
+        const goRight = turn === 'R';
+        if (isGod && pm) {
+          // 上帝模式 + 概率：L↔R 互为反向，S↔U 互为反向
+          const rev = { L:'R', R:'L', S:'U', U:'S' };
+          let t = turn;
+          if (Math.random() < sp) { t = 'S'; }           // 直行概率
+          else if (Math.random() > pb) { t = rev[t] || t; } // 反方向概率
+          switch (t) {
+            case 'L': ant.dir = (ant.dir + N - 1) % N; break;
+            case 'R': ant.dir = (ant.dir + 1) % N; break;
+            case 'S': break;
+            case 'U': ant.dir = (ant.dir + Math.floor(N / 2)) % N; break;
+          }
+        } else if (isGod) {
+          switch (turn) {
+            case 'L': ant.dir = (ant.dir + N - 1) % N; break;
+            case 'R': ant.dir = (ant.dir + 1) % N; break;
+            case 'S': break;
+            case 'U': ant.dir = (ant.dir + Math.floor(N / 2)) % N; break;
+          }
+        } else if (pm) {
+          if (Math.random() < sp) { /* 直行 */ }
+          else if (Math.random() > pb) {
+            ant.dir = goRight ? (ant.dir + N - 1) % N : (ant.dir + 1) % N;
+          } else {
+            ant.dir = goRight ? (ant.dir + 1) % N : (ant.dir + N - 1) % N;
+          }
+        } else {
+          ant.dir = goRight ? (ant.dir + 1) % N : (ant.dir + N - 1) % N;
+        }
+
+        if (nextCell === 0) this.cells.delete(key);
+        else if (this.mode !== 'classic') this.cells.set(key, { s: nextCell, c: ant.trailColor });
+        else this.cells.set(key, nextCell);
+
+        if (isGod) ant.state = nextAntState;
+
+        ant.x += dirs[ant.dir][0];
+        ant.y += dirs[ant.dir][1];
+        const w = this._wrap(ant.x, ant.y);
+        ant.x = w.x; ant.y = w.y;
+      }
+    }
+  }
+
+  reset(mode, rule, numAnts, worldW, worldH, angle) {
+    if (mode !== undefined) this.mode = mode;
+    if (rule !== undefined) { this.rule = rule; this.numStates = rule.length; }
+    if (numAnts !== undefined) this.numAnts = numAnts;
+    if (angle !== undefined) { this.angle = angle; this.dirs = DIR_SETS[angle]; }
+    if (worldW !== undefined) this.worldW = worldW;
+    if (worldH !== undefined) this.worldH = worldH;
+    this.cells.clear();
+    this.steps = 0;
+    this._initAnts();
+  }
+}
+
+// 上帝模式预设规则
+const GOD_PRESETS = {
+  '经典 Langton': 'R01L00',
+  'Snowflake': 'L11R01|U11U21|S20U00',
+  'Constructor': 'S20S20|L21R10|S10U20',
+  '对称花纹': 'R01R02L03L04R05R00',
+};
+function fillPresets() {
+  selPreset.innerHTML = '<option value="">预设▾</option>';
+  for (const [name, rule] of Object.entries(GOD_PRESETS)) {
+    const o = document.createElement('option'); o.value = rule; o.textContent = name;
+    selPreset.appendChild(o);
+  }
+}
+// =============================================
+// 全局状态
+// =============================================
+let probMode = false, probBias = 0.8, straightProb = 0.1;
+let recorder = null, recordedChunks = [];
+let sim = new Simulation('classic', 'RL', 1, 267, 150);
+let running = false, animId = null;
+let placingMode = false;
+let cellSize = 8, offsetX = 0, offsetY = 0;
+let panning = false, panStart = {x:0,y:0}, panOff = {x:0,y:0};
+let pinchDist = 0, pinchCellSize = 0;
+
+// 指数速度曲线：滑块1-100，映射0.1→5000步/秒
+const speedCurve = [];
+for (let i = 0; i < 100; i++) {
+  speedCurve.push(Math.round(0.1 * Math.exp((i / 99) * Math.log(5000 / 0.1)) * 10) / 10);
+}
+
+// =============================================
+// DOM
+// =============================================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const statSteps = document.getElementById('stat-steps');
+const btnPlay = document.getElementById('btn-play');
+const btnStep = document.getElementById('btn-step');
+const btnReset = document.getElementById('btn-reset');
+const menuToggle = document.getElementById('menu-toggle');
+const panel = document.getElementById('panel');
+const selMode = document.getElementById('sel-mode');
+const selPreset = document.getElementById('sel-preset');
+const selAngle = document.getElementById('sel-angle');
+const selWorld = document.getElementById('sel-world');
+const inpRule = document.getElementById('inp-rule');
+const lblAnts = document.getElementById('lbl-ants');
+const inpAnts = document.getElementById('inp-ants');
+const antsLabel = document.getElementById('ants-label');
+const speedInput = document.getElementById('speed');
+const speedLabel = document.getElementById('speed-label');
+const btnPlace = document.getElementById('btn-place');
+const chkProb = document.getElementById('chk-prob');
+const lblProbBias = document.getElementById('lbl-prob-bias');
+const inpProbBias = document.getElementById('inp-prob-bias');
+const probBiasLabel = document.getElementById('prob-bias-label');
+const lblStraight = document.getElementById('lbl-straight');
+const inpStraight = document.getElementById('inp-straight');
+const straightLabel = document.getElementById('straight-label');
+const cellSizeInput = document.getElementById('cell-size');
+const btnRecord = document.getElementById('btn-record');
+const btnClear = document.getElementById('btn-clear');
+const selPalette = document.getElementById('sel-palette');
+const btnRandomColors = document.getElementById('btn-random-colors');
+const btnExport = document.getElementById('btn-export');
+const btnImport = document.getElementById('btn-import');
+const importFile = document.getElementById('import-file');
+const antRows = document.getElementById('ant-rows');
+const lblRuleGlobal = document.getElementById('lbl-rule-global');
+const cellSizeLabel = document.getElementById('cell-size-label');
+
+// =============================================
+// Canvas
+// =============================================
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+resize();
+window.addEventListener('resize', () => { resize(); draw(); });
+
+// =============================================
+// 坐标转换
+// =============================================
+function gridToScreen(gx, gy) {
+  return {
+    sx: gx * cellSize + offsetX + window.innerWidth / 2,
+    sy: gy * cellSize + offsetY + window.innerHeight / 2,
+  };
+}
+function screenToGrid(sx, sy) {
+  return {
+    gx: Math.floor((sx - offsetX - window.innerWidth / 2) / cellSize),
+    gy: Math.floor((sy - offsetY - window.innerHeight / 2) / cellSize),
+  };
+}
+
+// =============================================
+// 渲染
+// =============================================
+function draw() {
+  const W = window.innerWidth, H = window.innerHeight;
+  ctx.fillStyle = '#fafafa';
+  ctx.fillRect(0, 0, W, H);
+  draw2D(W, H);
+  statSteps.textContent = sim.steps.toLocaleString();
+}
+
+function draw2D(W, H) {
+  const { gx: gx0, gy: gy0 } = screenToGrid(0, 0);
+  const { gx: gx1, gy: gy1 } = screenToGrid(W, H);
+
+  for (const [key, val] of sim.cells) {
+    const [gx, gy] = key.split(',').map(Number);
+    if (gx < gx0 - 1 || gx > gx1 + 1 || gy < gy0 - 1 || gy > gy1 + 1) continue;
+    const { sx, sy } = gridToScreen(gx, gy);
+    if (sim.mode !== 'classic' && val && typeof val === 'object') {
+      ctx.fillStyle = trailVariant(val.c, val.s, sim.numStates);
+    } else {
+      ctx.fillStyle = stateColors[val] || '#2d2d2d';
+    }
+    ctx.fillRect(sx, sy, cellSize, cellSize);
+  }
+
+  ctx.strokeStyle = '#e8e8e8'; ctx.lineWidth = 0.5;
+  for (let gx = gx0 - 1; gx <= gx1 + 1; gx++) {
+    const { sx } = gridToScreen(gx, 0);
+    ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, H); ctx.stroke();
+  }
+  for (let gy = gy0 - 1; gy <= gy1 + 1; gy++) {
+    const { sy } = gridToScreen(0, gy);
+    ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(W, sy); ctx.stroke();
+  }
+
+  const bw0 = gridToScreen(0, 0), bw1 = gridToScreen(sim.worldW, sim.worldH);
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(bw0.sx, bw0.sy, bw1.sx - bw0.sx, bw1.sy - bw0.sy);
+  ctx.setLineDash([]);
+
+  for (const ant of sim.ants) {
+    const { sx, sy } = gridToScreen(ant.x, ant.y);
+    const cx = sx + cellSize / 2, cy = sy + cellSize / 2;
+    ctx.fillStyle = ant.color;
+    ctx.beginPath(); ctx.arc(cx, cy, cellSize * 0.42, 0, Math.PI * 2); ctx.fill();
+    // 方向指示线
+    if (cellSize >= 5) {
+      const dirs = (sim.mode === 'sandbox' || sim.mode === 'god') ? ant.dirs : sim.dirs;
+      const d = dirs[ant.dir];
+      const n = Math.hypot(d[0], d[1]) || 1;
+      ctx.strokeStyle = '#fafafa'; ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + d[0]/n * cellSize * 0.45, cy + d[1]/n * cellSize * 0.45);
+      ctx.stroke();
+    }
+  }
+}
+
+// =============================================
+// 动画
+// =============================================
+let stepAccum = 0;
+function loop() {
+  if (!running) return;
+  const spd = speedCurve[parseInt(speedInput.value) - 1] || 1;
+  const stepsPerFrame = spd / 60; // 换算为每帧步数（支持小数）
+  stepAccum += stepsPerFrame;
+  const n = Math.floor(stepAccum);
+  stepAccum -= n;
+  for (let i = 0; i < n; i++) sim.step();
+  if (n > 0) draw();
+  animId = requestAnimationFrame(loop);
+}
+
+function play() {
+  if (running) return;
+  running = true;
+  stepAccum = 0;
+  btnPlay.textContent = '暂停';
+  animId = requestAnimationFrame(loop);
+}
+function pause() {
+  running = false;
+  btnPlay.textContent = '开始';
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+}
+function togglePlay() { running ? pause() : play(); }
+function stepAndDraw() { if (running) pause(); sim.step(); draw(); }
+
+function reset() {
+  pause();
+  if (sim.mode === 'sandbox' || sim.mode === 'god') {
+    sim.ants = [];
+    sim.numAnts = 0;
+    sim.cells.clear();
+    sim.steps = 0;
+    inpAnts.value = 0; antsLabel.textContent = '0';
+    rebuildAntRows();
+  } else {
+    sim.reset(sim.mode, sim.rule, sim.numAnts, sim.worldW, sim.worldH);
+  }
+  offsetX = -Math.floor(sim.worldW / 2) * cellSize;
+  offsetY = -Math.floor(sim.worldH / 2) * cellSize;
+  exitPlaceMode();
+  draw();
+}
+
+// =============================================
+// 配置应用
+// =============================================
+function getWorldSize() {
+  const h = parseInt(selWorld.value) || 150;
+  const ratio = window.innerWidth / window.innerHeight;
+  return { w: Math.round(h * ratio), h };
+}
+
+function applyConfig() {
+  const mode = selMode.value;
+  const rule = inpRule.value.toUpperCase().replace(/[^LRSU0-9|]/g, '') || (mode === 'god' ? 'R01L00' : 'RL');
+  const angle = parseInt(selAngle.value) || 4;
+  const numAnts = parseInt(inpAnts.value) || 1;
+  const { w: worldW, h: worldH } = getWorldSize();
+
+  const isSandbox = mode === 'sandbox' || mode === 'god';
+  lblAnts.style.display = (mode === 'multi-ant') ? '' : 'none';
+  btnPlace.style.display = (mode === 'multi-ant' || isSandbox) ? '' : 'none';
+  btnClear.style.display = isSandbox ? '' : 'none';
+  selPalette.style.display = isSandbox ? '' : 'none';
+  btnRandomColors.style.display = isSandbox ? '' : 'none';
+  btnExport.style.display = isSandbox ? '' : 'none';
+  btnImport.style.display = isSandbox ? '' : 'none';
+  selPreset.style.display = mode === 'god' ? '' : 'none';
+  antRows.style.display = 'none';
+  exitPlaceMode();
+
+  inpRule.value = rule;
+
+  pause();
+  if (isSandbox && sim.mode !== mode) {
+    sim.reset(mode, rule, 0, worldW, worldH, angle);
+    inpAnts.value = 0; antsLabel.textContent = '0';
+    rebuildAntRows();
+  } else if (isSandbox) {
+    sim.mode = mode;
+    sim.rule = rule;
+    sim.angle = angle; sim.dirs = DIR_SETS[angle];
+    sim.worldW = worldW; sim.worldH = worldH;
+  } else {
+    const antCount = (mode === 'multi-ant') ? numAnts : 1;
+    sim.reset(mode, rule, antCount, worldW, worldH, angle);
+  }
+  cellSize = 8;
+  cellSizeInput.value = cellSize;
+  cellSizeLabel.textContent = cellSize;
+  offsetX = -Math.floor(worldW / 2) * cellSize;
+  offsetY = -Math.floor(worldH / 2) * cellSize;
+  draw();
+}
+
+selWorld.addEventListener('change', () => {
+  if (sim.mode === 'sandbox' || sim.mode === 'god') {
+    const { w, h } = getWorldSize();
+    sim.worldW = w; sim.worldH = h;
+    draw();
+  } else {
+    applyConfig();
+  }
+});
+selPreset.addEventListener('change', () => {
+  if (selPreset.value) {
+    const r = selPreset.value;
+    inpRule.value = r;
+    sim.rule = r; // 仅更新新蚂蚁默认值，不影响已有蚂蚁
+    setTimeout(() => { selPreset.value = ''; }, 100);
+  }
+});
+selMode.addEventListener('change', applyConfig);
+selAngle.addEventListener('change', () => {
+  if (sim.mode === 'sandbox' || sim.mode === 'god') {
+    const a = parseInt(selAngle.value);
+    sim.angle = a; sim.dirs = DIR_SETS[a];
+    draw();
+  } else {
+    applyConfig();
+  }
+});
+
+inpRule.addEventListener('input', () => {
+  const raw = inpRule.value.toUpperCase().replace(/[^LRSU]/g, '');
+  if (raw.length >= 1) {
+    inpRule.value = raw;
+    if (sim.mode === 'sandbox' || sim.mode === 'god') {
+      sim.rule = raw;
+    } else {
+      sim.rule = raw;
+      sim.numStates = raw.length;
+      sim.reset(sim.mode, sim.rule, sim.numAnts, sim.worldW, sim.worldH, sim.angle);
+      draw();
+    }
+  }
+});
+inpRule.addEventListener('blur', () => {
+  if (sim.mode !== 'sandbox' && sim.mode !== 'god') applyConfig();
+});
+
+inpAnts.addEventListener('input', () => {
+  antsLabel.textContent = inpAnts.value;
+  applyConfig();
+});
+
+// =============================================
+// 面板 / 放置模式
+// =============================================
+function openPanel() { panel.classList.add('open'); menuToggle.style.opacity = '0'; }
+function closePanel() { panel.classList.remove('open'); menuToggle.style.opacity = ''; }
+function togglePanel() { panel.classList.contains('open') ? closePanel() : openPanel(); }
+
+function enterPlaceMode() {
+  placingMode = true;
+  btnPlace.classList.add('primary');
+  btnPlace.textContent = '放置中…';
+  canvas.style.cursor = 'crosshair';
+}
+function exitPlaceMode() {
+  placingMode = false;
+  btnPlace.classList.remove('primary');
+  btnPlace.textContent = '放置';
+  canvas.style.cursor = '';
+}
+function togglePlaceMode() { placingMode ? exitPlaceMode() : enterPlaceMode(); }
+
+const LABEL = (t) => { const s = document.createElement('span'); s.className = 'ant-lbl'; s.textContent = t; return s; };
+
+function rebuildAntRows() {
+  antRows.innerHTML = '';
+  if (sim.ants.length === 0) { antRows.style.display = 'none'; return; }
+
+  for (let i = 0; i < sim.ants.length; i++) {
+    const ant = sim.ants[i];
+    const row = document.createElement('div'); row.className = 'ant-row';
+
+    // 颜色圆点
+    const dot = document.createElement('span'); dot.className = 'ant-dot';
+    dot.style.background = ant.color;
+    row.appendChild(dot);
+
+    // 规则
+    row.appendChild(LABEL('规则'));
+    const rInp = document.createElement('input'); rInp.className = 'rule-input';
+    rInp.value = ant.rule; rInp.spellcheck = false;
+    rInp.addEventListener('input', () => {
+      const raw = rInp.value.toUpperCase().replace(/[^LRSU0-9|]/g, '');
+      if (raw.length >= 1) { ant.rule = raw; rInp.value = raw; }
+    });
+    row.appendChild(rInp);
+
+    // 角度
+    row.appendChild(LABEL('角度'));
+    const aSel = document.createElement('select');
+    [['4','90°'],['6','60°'],['8','45°'],['12','30°']].forEach(([v,l]) => {
+      const o = document.createElement('option'); o.value = v; o.textContent = l;
+      if (parseInt(v) === ant.angle) o.selected = true;
+      aSel.appendChild(o);
+    });
+    aSel.addEventListener('change', () => {
+      ant.angle = parseInt(aSel.value); ant.dirs = DIR_SETS[ant.angle];
+    });
+    row.appendChild(aSel);
+
+    // 概率
+    row.appendChild(LABEL('概率'));
+    const pChk = document.createElement('input'); pChk.type = 'checkbox';
+    pChk.checked = ant.probMode;
+    pChk.addEventListener('change', () => { ant.probMode = pChk.checked; });
+    row.appendChild(pChk);
+
+    // 偏向
+    row.appendChild(LABEL('偏向'));
+    const bSl = document.createElement('input'); bSl.type = 'range';
+    bSl.min = '0'; bSl.max = '100'; bSl.value = Math.round(ant.probBias * 100);
+    bSl.style.width = '50px';
+    bSl.addEventListener('input', () => { ant.probBias = parseInt(bSl.value) / 100; });
+    row.appendChild(bSl);
+
+    // 直行
+    row.appendChild(LABEL('直行'));
+    const sSl = document.createElement('input'); sSl.type = 'range';
+    sSl.min = '0'; sSl.max = '100'; sSl.value = Math.round(ant.straightProb * 100);
+    sSl.style.width = '50px';
+    sSl.addEventListener('input', () => { ant.straightProb = parseInt(sSl.value) / 100; });
+    row.appendChild(sSl);
+
+    // 速度
+    row.appendChild(LABEL('速度'));
+    const vSl = document.createElement('input'); vSl.type = 'range';
+    vSl.min = '1'; vSl.max = '20'; vSl.value = ant.speed;
+    vSl.style.width = '44px';
+    vSl.addEventListener('input', () => { ant.speed = parseInt(vSl.value); });
+    row.appendChild(vSl);
+
+    // 删除
+    const del = document.createElement('button'); del.className = 'ant-del';
+    del.textContent = '×';
+    del.addEventListener('click', () => { sim.removeAnt(i); rebuildAntRows(); draw(); });
+    row.appendChild(del);
+
+    antRows.appendChild(row);
+  }
+
+  antRows.style.display = '';
+}
+
+// =============================================
+// 事件绑定
+// =============================================
+btnPlay.addEventListener('click', togglePlay);
+btnStep.addEventListener('click', stepAndDraw);
+btnClear.addEventListener('click', () => { sim.clearCells(); draw(); });
+btnReset.addEventListener('click', reset);
+btnRecord.addEventListener('click', () => {
+  if (recorder) {
+    recorder.stop();
+    recorder = null;
+    btnRecord.textContent = '⬤ 录制';
+    btnRecord.classList.remove('primary');
+  } else {
+    const stream = canvas.captureStream(30);
+    // 优先 MP4 (Safari)，否则 VP9 WebM (Chrome)，降级 VP8 WebM
+    const mimes = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+    let mime = 'video/webm';
+    for (const m of mimes) { if (MediaRecorder.isTypeSupported(m)) { mime = m; break; } }
+    recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8000000 });
+    recordedChunks = [];
+    recorder.ondataavailable = e => recordedChunks.push(e.data);
+    recorder.onstop = () => {
+      const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+      const blob = new Blob(recordedChunks, { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'langton-ant-' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.' + ext;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+    recorder.start();
+    btnRecord.textContent = '⬤ 停止录制';
+    btnRecord.classList.add('primary');
+  }
+});
+btnPlace.addEventListener('click', togglePlaceMode);
+chkProb.addEventListener('change', () => {
+  probMode = chkProb.checked;
+  lblProbBias.style.display = probMode ? '' : 'none';
+  lblStraight.style.display = probMode ? '' : 'none';
+});
+inpStraight.addEventListener('input', () => {
+  straightProb = parseInt(inpStraight.value) / 100;
+  straightLabel.textContent = inpStraight.value;
+});
+inpProbBias.addEventListener('input', () => {
+  probBias = parseInt(inpProbBias.value) / 100;
+  probBiasLabel.textContent = inpProbBias.value;
+});
+selPalette.addEventListener('change', () => applyPalette(selPalette.value));
+btnRandomColors.addEventListener('click', randomizeColors);
+btnExport.addEventListener('click', exportSandbox);
+importFile.addEventListener('change', () => {
+  if (importFile.files[0]) { importSandbox(importFile.files[0]); importFile.value = ''; }
+});
+menuToggle.addEventListener('click', togglePanel);
+document.getElementById('panel-close').addEventListener('click', closePanel);
+
+speedInput.addEventListener('input', () => {
+  const v = speedCurve[parseInt(speedInput.value) - 1];
+  speedLabel.textContent = v >= 10 ? Math.round(v) : v.toFixed(1);
+});
+cellSizeInput.addEventListener('input', () => {
+  cellSize = parseInt(cellSizeInput.value);
+  cellSizeLabel.textContent = cellSize;
+  draw();
+});
+
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  switch (e.code) {
+    case 'Space': e.preventDefault(); togglePlay(); break;
+    case 'ArrowRight': e.preventDefault(); stepAndDraw(); break;
+    case 'KeyR': if (!e.ctrlKey && !e.metaKey) reset(); break;
+    case 'Escape':
+      if (placingMode) exitPlaceMode();
+      else closePanel();
+      break;
+  }
+});
+
+let mouseMoved = false;
+canvas.addEventListener('mousedown', (e) => {
+  panning = true;
+  mouseMoved = false;
+  panStart = { x: e.clientX, y: e.clientY };
+  panOff = { x: offsetX, y: offsetY };
+});
+window.addEventListener('mousemove', (e) => {
+  if (!panning) return;
+  const dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;
+  if (Math.abs(dx) > 2 || Math.abs(dy) > 2) mouseMoved = true;
+  offsetX = panOff.x + dx;
+  offsetY = panOff.y + dy;
+  draw();
+});
+window.addEventListener('mouseup', (e) => {
+  if (placingMode && !mouseMoved && e.target === canvas && (sim.mode === 'multi-ant' || sim.mode === 'sandbox' || sim.mode === 'god')) {
+    const { gx, gy } = screenToGrid(e.clientX, e.clientY);
+    const rule = inpRule.value.toUpperCase().replace(/[^LRSU0-9|]/g, '') || (sim.mode === 'god' ? 'R01L00' : 'RL');
+    sim.addAnt(gx, gy, rule);
+    inpAnts.value = sim.numAnts;
+    antsLabel.textContent = sim.numAnts;
+    if (sim.mode === 'sandbox' || sim.mode === 'god') rebuildAntRows();
+    exitPlaceMode();
+    draw();
+  }
+  panning = false;
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const mx = e.clientX, my = e.clientY;
+  const W = window.innerWidth, H = window.innerHeight;
+  const old = cellSize;
+  cellSize = Math.max(1, Math.min(40, old * (e.deltaY > 0 ? 0.95 : 1.05)));
+  if (Math.abs(cellSize - old) < 0.001) return;
+  const s = cellSize / old;
+  offsetX = (mx - W/2) * (1 - s) + offsetX * s;
+  offsetY = (my - H/2) * (1 - s) + offsetY * s;
+  cellSizeInput.value = Math.round(cellSize);
+  cellSizeLabel.textContent = Math.round(cellSize);
+  draw();
+}, { passive: false });
+
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) {
+    panning = true;
+    panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    panOff = { x: offsetX, y: offsetY };
+  } else if (e.touches.length === 2) {
+    panning = false;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchDist = Math.hypot(dx, dy);
+    pinchCellSize = cellSize;
+  }
+}, { passive: false });
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 1 && panning) {
+    offsetX = panOff.x + (e.touches[0].clientX - panStart.x);
+    offsetY = panOff.y + (e.touches[0].clientY - panStart.y);
+    draw();
+  } else if (e.touches.length === 2 && pinchDist > 0) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    cellSize = Math.max(1, Math.min(40, Math.round(pinchCellSize * Math.hypot(dx, dy) / pinchDist)));
+    cellSizeInput.value = cellSize;
+    cellSizeLabel.textContent = cellSize;
+    draw();
+  }
+}, { passive: false });
+canvas.addEventListener('touchend', () => { panning = false; pinchDist = 0; });
+
+fillPresets();
+applyConfig();
+draw();
+</script>
+</body>
+</html>
