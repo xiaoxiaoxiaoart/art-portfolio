@@ -1,5 +1,5 @@
 /* 植物养护页面样式 —— 沿用 art-portfolio 设计语言
-   字体/基础变量来自 global.css（Sarasa Fixed Slab SC、黑白灰、--gap 等） */
+   基础变量来自 global.css（黑白灰、--gap 等） */
 
 :root {
   --g-status-healthy: #5b8a4a;
@@ -10,6 +10,17 @@
 .garden-page {
   display: flex;
   min-height: 100vh;
+  /* 植物名与养护记录由用户输入，使用字形覆盖更全的系统字体。 */
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", system-ui, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  -webkit-font-smoothing: auto;
+}
+
+.garden-page :is(button, input, select, textarea) {
+  font-family: inherit;
+  font-weight: inherit;
+  font-style: inherit;
 }
 
 .garden-sidebar {
@@ -44,7 +55,7 @@
 .garden-toolbar h2 {
   font-size: 20px;
   color: #111;
-  font-weight: 300;
+  font-weight: inherit;
   font-style: normal;
 }
 
@@ -98,7 +109,7 @@
   font-style: normal;
   color: #111;
   margin-bottom: 8px;
-  font-weight: 300;
+  font-weight: inherit;
 }
 
 .garden-care-zone {
@@ -280,7 +291,7 @@
   font-size: 26px;
   color: #111;
   font-style: normal;
-  font-weight: 300;
+  font-weight: inherit;
 }
 
 .garden-detail-title .species {
@@ -409,7 +420,7 @@
   font-size: 15px;
   color: var(--text-muted);
   font-style: normal;
-  font-weight: 300;
+  font-weight: inherit;
   margin-bottom: 10px;
   letter-spacing: 0.05em;
 }
@@ -591,7 +602,7 @@
   font-size: 15px;
   color: #111;
   font-style: normal;
-  font-weight: 300;
+  font-weight: inherit;
   margin-bottom: 12px;
   letter-spacing: 0.05em;
 }

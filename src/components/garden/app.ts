@@ -657,7 +657,7 @@ function bindPlantIdentification(form: HTMLFormElement) {
   const name = form.elements.namedItem('name') as HTMLInputElement;
   const species = form.elements.namedItem('species') as HTMLInputElement;
   const careFields = [
-    'light', 'water_frequency_days', 'dormant_water_frequency_days',
+    'category', 'light', 'water_frequency_days', 'dormant_water_frequency_days',
     'temp_range', 'humidity', 'fertilizer_notes',
   ] as const;
   const autoFilled = new Map<string, string>();
@@ -721,9 +721,8 @@ function bindPlantIdentification(form: HTMLFormElement) {
       status.textContent = '请选择最像的一项，填入名称及可用的养护建议。';
       for (const candidate of response.candidates) {
         const profile = plantCareProfile(candidate.scientificName);
-        const chineseName = candidate.commonName?.match(/\p{Script=Han}/u)
-          ? candidate.commonName
-          : profile?.chineseName;
+        const chineseName = profile?.chineseName
+          ?? (candidate.commonName?.match(/\p{Script=Han}/u) ? candidate.commonName : undefined);
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'garden-btn';
