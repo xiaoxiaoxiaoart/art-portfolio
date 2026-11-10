@@ -1,7 +1,4 @@
-interface GardenEnv {
-  PUBLIC_SUPABASE_URL?: string;
-}
-
+const upstreamOrigin = 'https://jfkmfpxlqyjxmyuewqlx.supabase.co';
 const noCache = { 'Cache-Control': 'no-store' };
 
 function isPublicKey(key: string): boolean {
@@ -19,11 +16,10 @@ function isPublicKey(key: string): boolean {
   }
 }
 
-export async function onRequest({ request, env }: { request: Request; env: GardenEnv }): Promise<Response> {
+export async function onRequest({ request }: { request: Request }): Promise<Response> {
   if (request.method !== 'GET') {
     return new Response(null, { status: 405, headers: { ...noCache, Allow: 'GET' } });
   }
-  if (!env.PUBLIC_SUPABASE_URL) return new Response(null, { status: 503, headers: noCache });
   const key = request.headers.get('apikey') ?? '';
   if (!isPublicKey(key)) return new Response(null, { status: 403, headers: noCache });
 
@@ -34,20 +30,20 @@ export async function onRequest({ request, env }: { request: Request; env: Garde
 
   try {
     // 只代理花园的列表和详情查询，沿用 Supabase 的公开权限和数据访问策略。
-    const url = new URL(plant ? '/rest/v1/events' : '/rest/v1/plants_with_watering_schedule', env.PUBLIC_SUPABASE_URL);
+    const url = new URL(plant ? '/rest/v1/events' : '/rest/v1/plants_with_watering_schedule', upstreamOrigin);
     url.search = plant
       ? new URLSearchParams({ select: '*', plant_id: `eq.${plant}`, order: 'date.desc' }).toString()
       : 'select=*&order=created_at.asc';
-    const upstream = await fetch(url, {
+    const upstream = await fetch(url.toString(), {
       headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' },
       redirect: 'error',
       signal: AbortSignal.timeout(8_000),
     });
-    return new Response(upstream.body, {
-      status: upstream.status,
-      headers: { ...noCache, 'Content-Type': 'application/json', 'X-Content-Type-Options': 'nosniff' },
-    });
+    if (!upstream.ok) {
+      return Response.json({ error: 'garden_upstream_rejected' }, { status: upstream.status, headers: noCache });
+    }
+    return Response.json(await upstream.json(), { headers: noCache });
   } catch {
-    return new Response(null, { status: 502, headers: noCache });
+    return Response.json({ error: 'garden_upstream_unavailable' }, { status: 502, headers: noCache });
   }
 }
