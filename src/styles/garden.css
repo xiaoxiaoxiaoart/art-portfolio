@@ -7,14 +7,35 @@
   --g-status-sick: #b04a4a;
 }
 
+/* 优先加载常用字，遇到常用字库未收录的字再加载扩展字库。 */
+@font-face {
+  font-family: 'Garden Sarasa Light';
+  src: url('/fonts/garden-sarasa-light-extended.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Garden Sarasa Light';
+  src: url('/fonts/garden-sarasa-light-common.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+body.garden-body {
+  --text-muted: #606d61;
+  background: #edf5ec;
+  font-family: 'Garden Sarasa Light', monospace;
+  font-weight: 300;
+  font-style: normal;
+  -webkit-font-smoothing: auto;
+}
+
 .garden-page {
   display: flex;
   min-height: 100vh;
-  /* 植物名与养护记录由用户输入，使用字形覆盖更全的系统字体。 */
-  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", system-ui, sans-serif;
-  font-weight: 400;
-  font-style: normal;
-  -webkit-font-smoothing: auto;
 }
 
 .garden-page :is(button, input, select, textarea) {
@@ -121,7 +142,7 @@
   margin: 0 0 6px;
   font-size: 14px;
   font-style: normal;
-  font-weight: 400;
+  font-weight: inherit;
   color: #555;
 }
 
