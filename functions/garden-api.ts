@@ -23,17 +23,32 @@ export async function onRequest({ request }: { request: Request }): Promise<Resp
   const key = request.headers.get('apikey') ?? '';
   if (!isPublicKey(key)) return new Response(null, { status: 403, headers: noCache });
 
-  const plant = new URL(request.url).searchParams.get('plant');
+  const params = new URL(request.url).searchParams;
+  const plant = params.get('plant');
+  const latestPhotos = params.get('photos') === 'latest';
   if (plant !== null && !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(plant)) {
     return new Response(null, { status: 400, headers: noCache });
   }
 
   try {
-    // 只代理花园的列表和详情查询，沿用 Supabase 的公开权限和数据访问策略。
-    const url = new URL(plant ? '/rest/v1/events' : '/rest/v1/plants_with_watering_schedule', upstreamOrigin);
-    url.search = plant
-      ? new URLSearchParams({ select: '*', plant_id: `eq.${plant}`, order: 'date.desc' }).toString()
-      : 'select=*&order=created_at.asc';
+    // 仅转发固定的花园查询，沿用 Supabase 的公开权限和数据访问策略。
+    const url = new URL('/rest/v1/plants_with_watering_schedule', upstreamOrigin);
+    if (plant) {
+      url.pathname = '/rest/v1/events';
+      url.search = new URLSearchParams({ select: '*', plant_id: `eq.${plant}`, order: 'date.desc' }).toString();
+    } else if (latestPhotos) {
+      url.pathname = '/rest/v1/plants';
+      url.search = new URLSearchParams({
+        select: 'id,events(date,photo_url)',
+        order: 'created_at.asc,id.asc',
+        'events.type': 'eq.photo',
+        'events.photo_url': 'not.is.null',
+        'events.order': 'date.desc,created_at.desc,id.desc',
+        'events.limit': '1',
+      }).toString();
+    } else {
+      url.search = 'select=*&order=created_at.asc';
+    }
     const upstream = await fetch(url.toString(), {
       headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' },
       // Workers 使用 manual 禁止自动跟随，避免把公开密钥转发到其他地址。

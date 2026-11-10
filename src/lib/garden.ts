@@ -26,12 +26,12 @@ export interface PlantInput {
   acquired_date?: string | null;
 }
 
-async function readGardenPage<T>(plant?: string): Promise<T[] | undefined> {
+async function readGardenPage<T>(params?: URLSearchParams): Promise<T[] | undefined> {
   if (window.location.hostname !== 'xiaoart.top' || !supabasePublicKey) return;
   const request = new AbortController();
   const timeout = window.setTimeout(() => request.abort(), 9_000);
   try {
-    const path = plant ? `/garden-api?plant=${encodeURIComponent(plant)}` : '/garden-api';
+    const path = params ? `/garden-api?${params}` : '/garden-api';
     const response = await fetch(path, {
       headers: { apikey: supabasePublicKey },
       signal: request.signal,
@@ -60,7 +60,7 @@ export async function fetchPlants(): Promise<Plant[]> {
 
 export async function fetchEvents(plantId: string): Promise<PlantEvent[]> {
   if (!supabase) return [];
-  const events = await readGardenPage<PlantEvent>(plantId);
+  const events = await readGardenPage<PlantEvent>(new URLSearchParams({ plant: plantId }));
   if (events) return events;
   const { data, error } = await supabase
     .from('events')
@@ -69,6 +69,35 @@ export async function fetchEvents(plantId: string): Promise<PlantEvent[]> {
     .order('date', { ascending: false });
   if (error) throw error;
   return data ?? [];
+}
+
+export type GardenPhoto = Pick<PlantEvent, 'date'> & { photo_url: string };
+
+export async function fetchLatestPhotos(): Promise<Map<string, GardenPhoto>> {
+  if (!supabase) return new Map();
+  type PhotoRow = { id: string; events: GardenPhoto[] };
+  let rows = await readGardenPage<PhotoRow>(new URLSearchParams({ photos: 'latest' }));
+  // 旧版代理可能返回植物列表。确认包含嵌套的照片记录再采用。
+  if (!rows?.every((row) => Array.isArray(row.events))) {
+    const { data, error } = await supabase
+      .from('plants')
+      .select('id,events(date,photo_url)')
+      .order('created_at').order('id')
+      .eq('events.type', 'photo')
+      .not('events.photo_url', 'is', null)
+      .order('date', { referencedTable: 'events', ascending: false })
+      .order('created_at', { referencedTable: 'events', ascending: false })
+      .order('id', { referencedTable: 'events', ascending: false })
+      .limit(1, { referencedTable: 'events' });
+    if (error) throw error;
+    rows = data ?? [];
+  }
+  const photos = new Map<string, GardenPhoto>();
+  for (const { id, events } of rows) {
+    const photo = events[0];
+    if (photo?.photo_url && Number.isFinite(Date.parse(photo.date))) photos.set(id, photo);
+  }
+  return photos;
 }
 
 export async function createPlant(input: PlantInput): Promise<Plant> {

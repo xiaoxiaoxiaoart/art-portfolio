@@ -10,6 +10,7 @@ import { plantCareProfile, type PlantCareSuggestions } from '../../lib/plant-car
 import {
   fetchPlants,
   fetchEvents,
+  fetchLatestPhotos,
   createPlant,
   updatePlant,
   deletePlant,
@@ -20,6 +21,7 @@ import {
   postponeWatering,
   needsWatering,
   daysSince,
+  type GardenPhoto,
   type PlantInput,
 } from '../../lib/garden';
 
@@ -51,6 +53,12 @@ let plantLoadFailed = false;
 let busy = false;
 let errorMsg: string | null = null;
 let groupBy: 'zone' | 'category' = 'zone';
+let careExpanded = false;
+let albumMode = false;
+let albumSort: 'added' | 'recent' = 'added';
+let latestPhotos: Map<string, GardenPhoto> | null = null;
+let latestPhotosRequest: Promise<Map<string, GardenPhoto>> | null = null;
+let latestPhotosFailed = false;
 let recentCare: { eventId: string; message: string } | null = null;
 let comparedPhotoIds: string[] = [];
 const thumbnailStorageKey = 'garden.thumbnailSize';
@@ -102,6 +110,19 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => map[c] ?? c);
 }
 
+function plantNames(value: string | null | undefined): { chinese: string; scientific: string } {
+  if (!value) return { chinese: '', scientific: '' };
+  // 中文名和学名共用原有的品种字段。旧版单行资料继续按原样读取。
+  const separator = value.indexOf('\n');
+  if (separator >= 0) {
+    return { chinese: value.slice(0, separator), scientific: value.slice(separator + 1) };
+  }
+  if (/\p{Script=Han}/u.test(value) && !/[a-z]/i.test(value)) {
+    return { chinese: value, scientific: '' };
+  }
+  return { chinese: plantCareProfile(value)?.chineseName ?? '', scientific: value };
+}
+
 // ---- 数据操作 ----
 
 async function loadPlants(): Promise<void> {
@@ -114,6 +135,27 @@ async function loadPlants(): Promise<void> {
     plantLoadFailed = true;
   } finally {
     loading = false;
+  }
+}
+
+async function loadLatestPhotos(): Promise<void> {
+  const request = fetchLatestPhotos();
+  latestPhotosRequest = request;
+  try {
+    const photos = await request;
+    if (latestPhotosRequest === request) latestPhotos = photos;
+  } catch {
+    if (latestPhotosRequest === request) latestPhotosFailed = true;
+  } finally {
+    if (latestPhotosRequest === request) {
+      latestPhotosRequest = null;
+      if (view === 'grid' && albumMode && albumSort === 'recent') {
+        const sortTab = '[data-album-sort="recent"]';
+        const hadFocus = document.activeElement?.matches(sortTab);
+        render();
+        if (hadFocus) root().querySelector<HTMLButtonElement>(sortTab)?.focus({ preventScroll: true });
+      }
+    }
   }
 }
 
@@ -283,11 +325,19 @@ function render(): void {
   const undo = recentCare && view !== 'form'
     ? `<div class="garden-care-feedback"><span role="status">${escapeHtml(recentCare.message)}</span><button type="button" class="garden-btn" data-action="undo-care">撤销</button></div>`
     : '';
+  const nav = document.getElementById('garden-nav')!;
+  const showNavigation = view === 'grid' && !loading && !plantLoadFailed;
+  const zones = view === 'grid' ? groupPlants(plants, 'zone') : [];
+  nav.hidden = !showNavigation;
+  nav.innerHTML = showNavigation ? navigationHtml(zones) : '';
   el.classList.toggle('garden-grid-view', view === 'grid' && !loading && plants.length > 0);
   if (view === 'grid') {
-    el.style.setProperty('--garden-thumbnail-size', `${thumbnailSize}px`);
-    el.innerHTML = banner + undo + gridHtml();
-    bindGrid(el);
+    if (showNavigation && albumMode && albumSort === 'recent' && zones.length && !latestPhotos && !latestPhotosRequest && !latestPhotosFailed) {
+      void loadLatestPhotos();
+    }
+    updateThumbnailLayout(el);
+    el.innerHTML = banner + undo + gridHtml(zones);
+    bindGrid(el, nav);
   } else if (view === 'detail' && selected) {
     el.innerHTML = banner + undo + detailHtml();
     bindDetail(el);
@@ -297,20 +347,22 @@ function render(): void {
   }
   el.querySelector('[data-action="undo-care"]')?.addEventListener('click', () => void handleUndoCare());
   if (busy) {
-    el.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button, input').forEach((control) => {
+    document.querySelectorAll<HTMLButtonElement | HTMLInputElement>('#garden-root :is(button, input), #garden-nav button').forEach((control) => {
       control.disabled = true;
     });
   }
 }
 
-function groupPlants(list: Plant[], by: 'zone' | 'category'): { key: string; plants: Plant[] }[] {
+type PlantGroup = { key: string; plants: Plant[] };
+
+function groupPlants(list: Plant[], by: 'zone' | 'category'): PlantGroup[] {
   const map = new Map<string, Plant[]>();
   for (const p of list) {
     const key = p[by]?.trim() || '未分类';
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(p);
   }
-  const groups: { key: string; plants: Plant[] }[] = [];
+  const groups: PlantGroup[] = [];
   for (const [key, list] of map) {
     if (key !== '未分类') groups.push({ key, plants: list });
   }
@@ -318,10 +370,18 @@ function groupPlants(list: Plant[], by: 'zone' | 'category'): { key: string; pla
   return groups;
 }
 
-function gridHtml(): string {
+function navigationHtml(zones: PlantGroup[]): string {
+  return `<button type="button" data-jump="garden-collection">全部植物</button>
+    <button type="button" data-jump="garden-care-title">今日养护</button>
+    ${zones.length ? `<span class="garden-nav-divider" aria-hidden="true"></span>${zones.map(({ key }, index) =>
+      `<button type="button" data-jump="garden-zone-${index}">${escapeHtml(key)}</button>`).join('')}` : ''}`;
+}
+
+function careDashboardHtml(): string {
   const due = plants.filter(needsWatering);
-  const dueHtml = loading || plantLoadFailed ? '' : `<section class="garden-dashboard" aria-labelledby="garden-care-title">
-    <h3 id="garden-care-title">今日养护 <span class="garden-group-count">${due.length} 株待检查</span></h3>
+  return `<details class="garden-dashboard" ${careExpanded ? 'open' : ''}>
+    <summary id="garden-care-title">今日养护 <span class="garden-group-count">${due.length ? `${due.length} 株待检查` : '没有待检查'}</span></summary>
+    <div class="garden-care-body">
     ${due.length ? groupPlants(due, 'zone').map(({ key, plants: group }) => `
       <section class="garden-care-zone">
         <h4>${escapeHtml(key)}</h4>
@@ -333,23 +393,33 @@ function gridHtml(): string {
           </div>
         </li>`).join('')}</ul>
       </section>`).join('') : '<p class="garden-empty">今天没有待检查的植物。</p>'}
-  </section>`;
+    </div></details>`;
+}
 
+function gridHtml(zones: PlantGroup[]): string {
+  const tab = (label: string, attribute: string, active: boolean) =>
+    `<button type="button" class="garden-tab ${active ? 'active' : ''}" aria-pressed="${active}" ${attribute}>${label}</button>`;
   const tabs = `<div class="garden-tabs">
-    <button class="garden-tab ${groupBy === 'zone' ? 'active' : ''}" data-group="zone">按区块</button>
-    <button class="garden-tab ${groupBy === 'category' ? 'active' : ''}" data-group="category">按类型</button>
+    ${albumMode
+      ? tab('按加入时间', 'data-album-sort="added"', albumSort === 'added') + tab('按最近拍摄', 'data-album-sort="recent"', albumSort === 'recent')
+      : tab('按区块', 'data-group="zone"', groupBy === 'zone') + tab('按类型', 'data-group="category"', groupBy === 'category')}
   </div>`;
 
-  const body = loading
-    ? '<div class="garden-empty">加载中…</div>'
-    : plants.length === 0
-      ? '<div class="garden-empty">还没有植物，点击右上角「添加植物」开始。</div>'
-      : groupPlants(plants, groupBy)
-          .map(
-            (g) =>
-              `<div class="garden-group"><h3 class="garden-group-title">${escapeHtml(g.key)} <span class="garden-group-count">${g.plants.length}</span></h3><div class="garden-grid">${g.plants.map(cardHtml).join('')}</div></div>`,
-          )
-          .join('');
+  let body = '';
+  if (loading) {
+    body = '<div class="garden-empty">加载中…</div>';
+  } else if (!plants.length) {
+    if (!plantLoadFailed) body = '<div class="garden-empty">还没有植物，点击右上角「添加植物」开始。</div>';
+  } else if (albumMode) {
+    body = albumHtml();
+  } else {
+    const groups = groupBy === 'zone' ? zones : groupPlants(plants, 'category');
+    body = groups.map(({ key, plants: group }, index) => `
+      <section class="garden-group" ${groupBy === 'zone' ? `id="garden-zone-${index}" tabindex="-1"` : ''}>
+        <h3 class="garden-group-title">${escapeHtml(key)} <span class="garden-group-count">${group.length}</span></h3>
+        <div class="garden-grid">${group.map((plant) => cardHtml(plant)).join('')}</div>
+      </section>`).join('');
+  }
 
   const loadError = plantLoadFailed ? `<div class="garden-care-feedback" role="alert">
     <span class="garden-error">植物列表加载失败，请重试。</span>
@@ -358,42 +428,79 @@ function gridHtml(): string {
   const sizeControl = !loading && plants.length
     ? `<input class="garden-size-control" id="garden-thumbnail-size" aria-label="缩略图大小" type="range" min="${thumbnailMin}" max="${thumbnailMax}" value="${thumbnailSize}" />`
     : '';
-  return `<div class="garden-toolbar"><h2>我的植物</h2><button class="garden-btn primary" data-action="add">+ 添加植物</button></div>${loadError}${dueHtml}${tabs}${plantLoadFailed && !plants.length ? '' : body}${sizeControl}`;
+  const albumToggle = !loading && !plantLoadFailed && plants.length
+    ? `<button type="button" class="garden-tab ${albumMode ? 'active' : ''}" aria-pressed="${albumMode}" data-action="album">画册</button>` : '';
+  return `<div class="garden-toolbar"><h2>${albumMode ? '植物画册' : '我的植物'}</h2><div class="garden-toolbar-actions">${albumToggle}<button class="garden-btn primary" data-action="add">+ 添加植物</button></div></div>
+    ${loadError}${loading || plantLoadFailed || albumMode ? '' : careDashboardHtml()}
+    <div id="garden-collection" tabindex="-1">${tabs}${body}</div>${sizeControl}`;
 }
 
-function cardHtml(p: Plant): string {
+function albumHtml(): string {
+  const recent = albumSort === 'recent';
+  const photoDate = (p: Plant) => {
+    const photo = latestPhotos?.get(p.id);
+    return photo ? Date.parse(photo.date) : -Infinity;
+  };
+  const sorted = [...plants].sort((a, b) =>
+    (recent ? photoDate(b) - photoDate(a) : 0) || Date.parse(b.created_at) - Date.parse(a.created_at),
+  );
+  const hint = !recent ? '' : latestPhotosFailed
+    ? '<p class="garden-empty garden-album-note">拍摄日期加载失败，暂按加入时间显示。 <button type="button" class="garden-btn small" data-action="retry-photos">重试</button></p>'
+    : `<p class="garden-empty garden-album-note" role="status">${latestPhotosRequest ? '正在加载拍摄日期…' : '未记录拍摄日期的植物排在最后。'}</p>`;
+  return `${hint}<div class="garden-grid">${sorted.map((p) => cardHtml(p, recent ? latestPhotos?.get(p.id) : undefined)).join('')}</div>`;
+}
+
+function checkLabel(p: Plant): string {
+  if (!p.watering_check_at) return '未设浇水周期';
+  if (needsWatering(p)) return '今天检查';
+  const date = fmtDate(p.watering_check_at);
+  const now = Date.now();
+  const tomorrow = fmtDate(now + 86_400_000);
+  const postponed = p.watering_postponed_until && Date.parse(p.watering_postponed_until) > now;
+  if (date === fmtDate(now)) return postponed ? '今天晚些再看' : '今天检查';
+  if (date === tomorrow) return postponed ? '明天再看' : '明天检查';
+  return `${date.slice(5).replace('-', '/')} ${postponed ? '再看' : '检查'}`;
+}
+
+function cardHtml(p: Plant, latest?: GardenPhoto): string {
+  const url = latest?.photo_url ?? p.photo_url;
+  const img = url
+    ? `<img class="garden-card-img" src="${escapeHtml(url)}" alt="" loading="lazy" />`
+    : '<span class="garden-card-img" aria-hidden="true"></span>';
+  const name = escapeHtml(p.name);
+  const content = `${img}<span class="garden-card-name">${name}</span>`;
+  if (albumMode) return `<button type="button" class="garden-card" data-open="${p.id}">${content}</button>`;
+
   const days = daysSince(p.last_watered_at);
-  const img = p.photo_url
-    ? `<img class="garden-card-img" src="${escapeHtml(p.photo_url)}" alt="${escapeHtml(p.name)}" loading="lazy" />`
-    : '<div class="garden-card-img"></div>';
-  const due = needsWatering(p) ? '<span class="garden-due">需浇水</span>' : '';
-  const nextCheck = !due && p.watering_postponed_until && p.watering_check_at
-    && Date.parse(p.watering_postponed_until) > Date.now()
-    ? `<span>下次检查 ${fmtDate(p.watering_check_at)}</span>`
-    : '';
+  const status = p.status === 'healthy' ? checkLabel(p) : statusLabel[p.status];
+  const tone = p.status === 'healthy' && needsWatering(p) ? 'attention' : p.status;
+  const nextCheck = p.watering_check_at && !needsWatering(p) ? `下次检查 ${fmtDate(p.watering_check_at)}` : '';
   const tag = groupBy === 'zone' ? p.category : p.zone;
   const tagHtml = tag ? `<span class="garden-card-tag">${escapeHtml(tag)}</span>` : '';
-  return `<div class="garden-card" data-open="${p.id}">${img}<div class="garden-card-name">${escapeHtml(p.name)}</div><div class="garden-card-meta">${tagHtml}<span class="garden-status ${p.status}">${statusLabel[p.status]}</span>${due}<span>${days !== null ? `${days} 天前浇水` : '未记录浇水'}</span>${nextCheck}</div></div>`;
+  return `<button type="button" class="garden-card" data-open="${p.id}" aria-label="${name}，${escapeHtml(status)}">
+    ${content}<span class="garden-card-meta"><span class="garden-status ${tone}"><span>${escapeHtml(status)}</span></span></span>
+    <span class="garden-card-meta garden-card-extra">${tagHtml}<span>${days === null ? '未记录浇水' : days === 0 ? '今天已浇水' : `${days} 天前浇水`}</span>${nextCheck ? `<span>${nextCheck}</span>` : ''}</span>
+  </button>`;
 }
 
 function detailHtml(): string {
   const p = selected!;
   const days = daysSince(p.last_watered_at);
+  const names = plantNames(p.species);
   const waterDays = p.dormant
     ? p.dormant_water_frequency_days ?? p.water_frequency_days
     : p.water_frequency_days;
-  const waterLabel = waterDays ? `${p.dormant ? '休眠期 ' : ''}${waterDays} 天` : '';
+  const waterLabel = waterDays ? `${p.dormant ? '休眠期 · ' : ''}每 ${waterDays} 天检查盆土` : '未设周期';
+  const check = checkLabel(p);
+  const checkDate = p.watering_check_at && !needsWatering(p) ? fmtDate(p.watering_check_at) : null;
   const facts = ([
     ['摆放位置', p.location],
     ['区块', p.zone],
     ['类型', p.category],
-    ['光照', p.light],
-    ['浇水周期', waterLabel],
     ['适宜温度', p.temp_range],
     ['湿度', p.humidity],
     ['购入日期', p.acquired_date],
     ['上次浇水', days !== null ? `${fmtDate(p.last_watered_at!)}（${days} 天前）` : '未记录'],
-    ['下次检查', p.watering_check_at && !needsWatering(p) ? fmtDate(p.watering_check_at) : null],
     ['上次施肥', p.last_fertilized_at ? fmtDate(p.last_fertilized_at) : '未记录'],
   ] satisfies [string, string | null][])
     .filter(([, v]) => v)
@@ -421,13 +528,14 @@ function detailHtml(): string {
     .join('');
 
   return `<button class="garden-back" data-action="back">← 返回</button>
+    <section class="garden-profile" aria-labelledby="garden-profile-name">
     <div class="garden-detail-header">
-      ${p.photo_url ? `<img class="garden-detail-img" src="${escapeHtml(p.photo_url)}" alt="${escapeHtml(p.name)}" />` : '<div class="garden-detail-img"></div>'}
+      ${p.photo_url ? photoButton(p.photo_url, `${p.name}的主照片`, true) : '<div class="garden-detail-img"></div>'}
       <div class="garden-detail-title">
-        <h2>${escapeHtml(p.name)}</h2>
-        ${p.species ? `<div class="species">${escapeHtml(p.species)}</div>` : ''}
+        <h2 id="garden-profile-name">${escapeHtml(p.name)}</h2>
+        ${names.chinese && names.chinese !== p.name ? `<div class="garden-profile-common">${escapeHtml(names.chinese)}</div>` : ''}
+        ${names.scientific && names.scientific !== p.name ? `<div class="species">${escapeHtml(names.scientific)}</div>` : ''}
         <span class="garden-status ${p.status}">${statusLabel[p.status]}</span>
-        ${needsWatering(p) ? '<span class="garden-due">需要浇水</span>' : ''}
         <label class="garden-dormant"><input type="checkbox" id="dormant-toggle" ${p.dormant ? 'checked' : ''} /> 休眠中</label>
         <div class="garden-detail-actions">
           <button class="garden-btn primary" data-action="water">记录浇水</button>
@@ -439,6 +547,12 @@ function detailHtml(): string {
         <div class="garden-detail-actions">${statusBtns}</div>
       </div>
     </div>
+    <dl class="garden-profile-summary">
+      <div><dt>下次检查</dt><dd class="${needsWatering(p) ? 'garden-due' : ''}">${escapeHtml(check)}${checkDate ? `<time datetime="${checkDate}">${checkDate}</time>` : ''}</dd></div>
+      <div><dt>光照</dt><dd>${escapeHtml(p.light?.trim() || '未记录')}</dd></div>
+      <div><dt>浇水</dt><dd>${escapeHtml(waterLabel)}</dd></div>
+    </dl>
+    </section>
     <form class="garden-photo-form" id="detail-photo-form" hidden>
       <label>照片 <input type="file" name="photo" accept="image/*" required /></label>
       <label>拍摄日期 <input type="date" name="taken-on" value="${fmtDate(Date.now())}" required /></label>
@@ -455,13 +569,27 @@ function detailHtml(): string {
       ${photoGrid}
       <div id="garden-photo-comparison">${comparisonHtml()}</div>
     </div>
-    <div class="garden-detail-section"><h3>养护记录</h3>${timelineHtml(timelineEvents)}</div>`;
+    <div class="garden-detail-section"><h3>养护记录</h3>${timelineHtml(timelineEvents)}</div>
+    <dialog class="garden-photo-viewer" aria-label="查看植物照片">
+      <form method="dialog" class="garden-photo-viewer-bar">
+        <button type="submit" class="garden-btn small" autofocus>关闭</button>
+      </form>
+      <img class="garden-photo-full" alt="" />
+    </dialog>`;
+}
+
+function photoButton(url: string, description: string, cover = false): string {
+  const alt = escapeHtml(description);
+  return `<button type="button" class="garden-photo-trigger${cover ? ' garden-cover-trigger' : ''}" aria-label="放大查看${alt}" aria-haspopup="dialog">
+    <img class="${cover ? 'garden-detail-img' : 'garden-photo'}" src="${escapeHtml(url)}" alt="${alt}"${cover ? '' : ' loading="lazy"'} />
+    <span class="garden-photo-zoom" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M2 6V2h4m4 0h4v4m0 4v4h-4m-4 0H2v-4" /></svg></span>
+  </button>`;
 }
 
 function photoFigure(photo: PlantEvent): string {
   const date = fmtDate(photo.date);
   return `<figure>
-    <img class="garden-photo" src="${escapeHtml(photo.photo_url ?? '')}" alt="${escapeHtml(photo.note || `${date} 的植物照片`)}" loading="lazy" />
+    ${photo.photo_url ? photoButton(photo.photo_url, photo.note || `${date} 的植物照片`) : '<div class="garden-photo"></div>'}
     <figcaption><time datetime="${date}">${date}</time>${photo.note ? `<span>${escapeHtml(photo.note)}</span>` : ''}</figcaption>
   </figure>`;
 }
@@ -493,6 +621,7 @@ function comparisonHtml(): string {
 
 function formHtml(): string {
   const p = editing;
+  const names = plantNames(p?.species);
   const field = (label: string, inner: string) =>
     `<div class="garden-field"><label>${label}</label>${inner}</div>`;
   const statusOptions = (Object.keys(statusLabel) as PlantStatus[])
@@ -533,8 +662,9 @@ function formHtml(): string {
           <button type="button" class="garden-btn" id="garden-identification-retry" hidden>开始识别</button>
           <div id="garden-identification-results" class="garden-identification-results"></div>`}
       </div>
-      <div class="garden-field"><label for="garden-plant-name">名称 *</label><input id="garden-plant-name" name="name" value="${p ? escapeHtml(p.name) : ''}" required /></div>
-      <div class="garden-field"><label for="garden-plant-species">品种 / 学名</label><input id="garden-plant-species" name="species" value="${p?.species ? escapeHtml(p.species) : ''}" /></div>
+      <div class="garden-field"><label for="garden-plant-name">昵称 / 名称 *</label><input id="garden-plant-name" name="name" value="${p ? escapeHtml(p.name) : ''}" required /></div>
+      <div class="garden-field"><label for="garden-plant-common-name">中文名</label><input id="garden-plant-common-name" name="chinese_name" value="${escapeHtml(names.chinese)}" /></div>
+      <div class="garden-field"><label for="garden-plant-species">品种 / 学名</label><input id="garden-plant-species" name="species" value="${escapeHtml(names.scientific)}" /></div>
       ${field('健康状态', `<select name="status">${statusOptions}</select>`)}
       ${field('摆放位置', `<input name="location" value="${p?.location ? escapeHtml(p.location) : ''}" />`)}
       ${field('区块', `<input name="zone" list="zone-list" value="${p?.zone ? escapeHtml(p.zone) : ''}" /><datalist id="zone-list">${zoneOptions}</datalist>`)}
@@ -554,11 +684,42 @@ function formHtml(): string {
 
 // ---- 事件绑定 ----
 
-function bindGrid(el: HTMLElement): void {
+function updateThumbnailLayout(el: HTMLElement): void {
+  el.style.setProperty('--garden-thumbnail-size', `${thumbnailSize}px`);
+  el.dataset.density = thumbnailSize < 128 ? 'compact' : thumbnailSize < 184 ? 'standard' : 'detailed';
+}
+
+function bindGrid(el: HTMLElement, nav: HTMLElement): void {
+  const dashboard = el.querySelector<HTMLDetailsElement>('.garden-dashboard');
+  dashboard?.addEventListener('toggle', () => {
+    if (dashboard.isConnected) careExpanded = dashboard.open;
+  });
+  nav.querySelectorAll<HTMLButtonElement>('[data-jump]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const destination = button.dataset.jump!;
+      if (destination === 'garden-care-title') {
+        careExpanded = true;
+        if (albumMode) {
+          albumMode = false;
+          render();
+        } else if (dashboard) {
+          dashboard.open = true;
+        }
+      } else if (destination.startsWith('garden-zone-') && (albumMode || groupBy !== 'zone')) {
+        albumMode = false;
+        groupBy = 'zone';
+        render();
+      }
+      const target = document.getElementById(destination);
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ block: 'start' });
+    });
+  });
+
   const sizeSlider = el.querySelector<HTMLInputElement>('#garden-thumbnail-size');
   sizeSlider?.addEventListener('input', () => {
     thumbnailSize = sizeSlider.valueAsNumber;
-    el.style.setProperty('--garden-thumbnail-size', `${thumbnailSize}px`);
+    updateThumbnailLayout(el);
   });
   sizeSlider?.addEventListener('change', () => {
     try {
@@ -568,11 +729,28 @@ function bindGrid(el: HTMLElement): void {
     }
   });
   el.querySelector('[data-action="retry-plants"]')?.addEventListener('click', () => void refreshGrid());
+  el.querySelector('[data-action="retry-photos"]')?.addEventListener('click', () => {
+    latestPhotosFailed = false;
+    render();
+  });
+  el.querySelector('[data-action="album"]')?.addEventListener('click', () => {
+    albumMode = !albumMode;
+    render();
+    el.querySelector<HTMLButtonElement>('[data-action="album"]')?.focus({ preventScroll: true });
+  });
+  el.querySelectorAll<HTMLButtonElement>('[data-album-sort]').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      albumSort = tab.dataset.albumSort === 'recent' ? 'recent' : 'added';
+      render();
+      el.querySelector<HTMLButtonElement>(`[data-album-sort="${albumSort}"]`)?.focus({ preventScroll: true });
+    });
+  });
 
   el.querySelectorAll<HTMLElement>('[data-group]').forEach((tab) => {
     tab.addEventListener('click', () => {
       groupBy = tab.dataset.group as 'zone' | 'category';
       render();
+      el.querySelector<HTMLButtonElement>(`[data-group="${groupBy}"]`)?.focus({ preventScroll: true });
     });
   });
   el.querySelectorAll<HTMLElement>('[data-open]').forEach((node) => {
@@ -584,6 +762,7 @@ function bindGrid(el: HTMLElement): void {
   });
   el.querySelectorAll<HTMLButtonElement>('[data-care]').forEach((button) => {
     button.addEventListener('click', () => {
+      if (dashboard) careExpanded = dashboard.open;
       const plant = plants.find((p) => p.id === button.dataset.plant);
       if (plant) void handleCare(plant, button.dataset.care === 'postpone' ? 1 : undefined);
     });
@@ -622,6 +801,34 @@ function bindDetail(el: HTMLElement): void {
   });
 
   bindPhotoArchive(el);
+  bindPhotoViewer(el);
+}
+
+function bindPhotoViewer(el: HTMLElement): void {
+  const dialog = el.querySelector<HTMLDialogElement>('.garden-photo-viewer')!;
+  const full = dialog.querySelector<HTMLImageElement>('.garden-photo-full')!;
+  let opener: HTMLButtonElement | null = null;
+  // 对照区会随复选框更新，事件绑定在保留的容器上。
+  el.querySelectorAll('.garden-detail-header, .garden-photos, #garden-photo-comparison').forEach((section) => {
+    section.addEventListener('click', (event) => {
+      if (!(event.target instanceof Element) || dialog.open) return;
+      const button = event.target.closest<HTMLButtonElement>('.garden-photo-trigger');
+      const thumb = button?.querySelector('img');
+      if (!button || button.disabled || !thumb) return;
+      full.src = thumb.currentSrc || thumb.src;
+      full.alt = thumb.alt;
+      opener = button;
+      dialog.showModal();
+    });
+  });
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+  dialog.addEventListener('close', () => {
+    full.removeAttribute('src');
+    opener?.focus({ preventScroll: true });
+    opener = null;
+  });
 }
 
 function bindPhotoArchive(el: HTMLElement): void {
@@ -667,6 +874,9 @@ function bindPhotoArchive(el: HTMLElement): void {
         note: String(fields.get('note') ?? '').trim() || undefined,
         photo_url: uploadedUrl,
       });
+      latestPhotos = null;
+      latestPhotosRequest = null;
+      latestPhotosFailed = false;
       saved = true;
       events = await fetchEvents(plantId);
       errorMsg = null;
@@ -710,12 +920,18 @@ function bindPlantIdentification(form: HTMLFormElement) {
   const retry = form.querySelector<HTMLButtonElement>('#garden-identification-retry')!;
   const results = form.querySelector<HTMLElement>('#garden-identification-results')!;
   const name = form.elements.namedItem('name') as HTMLInputElement;
+  const commonName = form.elements.namedItem('chinese_name') as HTMLInputElement;
   const species = form.elements.namedItem('species') as HTMLInputElement;
   const careFields = [
     'category', 'light', 'water_frequency_days', 'dormant_water_frequency_days',
     'temp_range', 'humidity', 'fertilizer_notes',
   ] as const;
   const autoFilled = new Map<string, string>();
+  function fillName(field: HTMLInputElement, value: string): void {
+    if (field.value.trim() && field.value !== autoFilled.get(field.name)) return;
+    field.value = value;
+    autoFilled.set(field.name, value);
+  }
   function applyCare(profile?: PlantCareSuggestions): number {
     let filled = 0;
     for (const key of careFields) {
@@ -808,7 +1024,8 @@ function bindPlantIdentification(form: HTMLFormElement) {
         ].filter(Boolean).join(' · ');
         button.addEventListener('click', async () => {
           const fallbackName = candidate.commonName || candidate.scientificName;
-          name.value = chineseName || fallbackName;
+          fillName(name, chineseName || fallbackName);
+          fillName(commonName, chineseName ?? '');
           species.value = candidate.scientificName;
           applyCare(profile);
           results.replaceChildren();
@@ -825,7 +1042,10 @@ function bindPlantIdentification(form: HTMLFormElement) {
           ]);
           if (current.signal.aborted || species.value !== candidate.scientificName) return;
           const suggestedName = chineseName || referenceName || generated.care?.chineseName;
-          if (suggestedName && name.value === fallbackName) name.value = suggestedName;
+          if (suggestedName) {
+            fillName(name, suggestedName);
+            fillName(commonName, suggestedName);
+          }
           if (applyCare(generated.care)) {
             status.textContent = '已填入 DeepSeek 养护建议，请按实际光照和盆土干湿核对后保存。';
           } else {
@@ -925,9 +1145,11 @@ function bindForm(el: HTMLElement): void {
     };
     const waterDays = str('water_frequency_days');
     const dormantDays = str('dormant_water_frequency_days');
+    const chineseName = str('chinese_name');
+    const scientificName = str('species');
     const input: PlantInput = {
       name: str('name') ?? '',
-      species: str('species'),
+      species: chineseName || scientificName ? `${chineseName ?? ''}\n${scientificName ?? ''}` : null,
       location: str('location'),
       zone: str('zone'),
       category: str('category'),

@@ -58,12 +58,51 @@ body.garden-body {
   border-inline-end: 1px solid var(--g-divider);
 }
 
+.garden-sidebar-inner {
+  position: sticky;
+  top: var(--content-padding);
+  max-height: calc(100dvh - 2 * var(--content-padding));
+  overflow-y: auto;
+}
+
+.garden-nav:not([hidden]) {
+  display: grid;
+  gap: 4px;
+  margin-top: 24px;
+}
+
+.garden-nav button {
+  min-height: 36px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--g-ink);
+  font-size: 14px;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.garden-nav button:is(:hover, :focus-visible) {
+  border-color: var(--g-accent);
+  outline-offset: -2px;
+}
+
+.garden-nav-divider {
+  border-block-start: 1px solid var(--g-divider);
+}
+
 .garden-title {
+  display: inline-block;
   font-size: 30px;
   color: var(--g-ink);
   font-style: normal;
   letter-spacing: 0;
   line-height: 1.3;
+}
+
+.garden-title:hover {
+  color: var(--g-accent);
 }
 
 .garden-content {
@@ -78,7 +117,16 @@ body.garden-body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 28px;
+}
+
+.garden-toolbar-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .garden-toolbar h2 {
@@ -135,16 +183,24 @@ body.garden-body {
 .garden-dashboard {
   background: var(--g-panel);
   border: 1px solid var(--g-line);
-  padding: 16px 20px;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
-.garden-dashboard h3 {
+.garden-dashboard summary {
+  min-height: 44px;
+  padding: 11px 14px;
   font-size: 16px;
-  font-style: normal;
   color: var(--g-ink);
-  margin-bottom: 8px;
-  font-weight: inherit;
+  cursor: pointer;
+  scroll-margin-block-start: 16px;
+}
+
+.garden-dashboard summary .garden-group-count {
+  margin-inline-start: 6px;
+}
+
+.garden-care-body {
+  padding: 0 14px 14px;
 }
 
 .garden-care-zone {
@@ -223,9 +279,26 @@ body.garden-body {
 }
 
 .garden-card {
+  display: block;
+  align-self: start;
+  width: 100%;
   min-width: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: start;
   overflow-wrap: anywhere;
   cursor: pointer;
+}
+
+.garden-card:focus-visible {
+  outline: 2px solid var(--g-accent);
+  outline-offset: 2px;
+}
+
+#garden-collection,
+.garden-group {
+  scroll-margin-block-start: 16px;
 }
 
 .garden-content.garden-grid-view {
@@ -245,6 +318,7 @@ body.garden-body {
 }
 
 .garden-card-img {
+  display: block;
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
@@ -257,6 +331,7 @@ body.garden-body {
 }
 
 .garden-card-name {
+  display: block;
   margin-top: 8px;
   font-size: 16px;
   color: var(--g-ink);
@@ -272,6 +347,15 @@ body.garden-body {
   color: var(--text-muted);
   font-style: normal;
   margin-top: 4px;
+}
+
+.garden-content:not([data-density='detailed']) .garden-card-extra,
+.garden-content[data-density='compact'] .garden-card-meta .garden-status > span {
+  display: none;
+}
+
+.garden-album-note {
+  margin-bottom: 12px;
 }
 
 /* 状态徽章：小圆点 + 文字 */
@@ -320,10 +404,17 @@ body.garden-body {
 }
 
 /* 详情视图 */
+.garden-profile {
+  padding: 20px;
+  margin-bottom: 28px;
+  border: 1px solid var(--g-line);
+  background: var(--g-field);
+}
+
 .garden-detail-header {
   display: flex;
   gap: 24px;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 
 .garden-detail-img {
@@ -338,6 +429,8 @@ body.garden-body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .garden-detail-title h2 {
@@ -351,6 +444,31 @@ body.garden-body {
   color: var(--text-muted);
   font-size: 15px;
   font-style: normal;
+}
+
+.garden-profile-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  background: var(--g-panel);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.garden-profile-summary dt,
+.garden-profile-summary time {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.garden-profile-summary dd {
+  margin-top: 4px;
+  font-size: inherit;
+}
+
+.garden-profile-summary time {
+  display: block;
 }
 
 .garden-detail-actions {
@@ -685,6 +803,25 @@ body.garden-body {
     border-inline-end: 0;
     border-block-end: 1px solid var(--g-divider);
   }
+  .garden-sidebar-inner {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+  .garden-nav:not([hidden]) {
+    display: flex;
+    margin-top: 10px;
+    overflow-x: auto;
+  }
+  .garden-nav button {
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+  .garden-nav-divider {
+    border-block-start: 0;
+    border-inline-start: 1px solid var(--g-divider);
+    margin-block: 8px;
+  }
   .garden-content {
     padding: 16px 20px;
   }
@@ -694,6 +831,22 @@ body.garden-body {
   .garden-detail-img {
     width: 100%;
     height: auto;
+    aspect-ratio: 1;
+  }
+  .garden-profile {
+    padding: 14px;
+  }
+  .garden-profile-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .garden-profile-summary > div {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 4px;
+    align-items: baseline;
+  }
+  .garden-profile-summary dd {
+    margin-top: 0;
   }
 }
 
@@ -744,4 +897,80 @@ body.garden-body {
 #garden-identification-status:empty,
 .garden-identification-results:empty {
   display: none;
+}
+
+.garden-photo-trigger {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.garden-cover-trigger {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  width: auto;
+}
+
+.garden-cover-trigger img {
+  display: block;
+}
+
+.garden-photo-zoom {
+  position: absolute;
+  inset-inline-end: 6px;
+  inset-block-end: 6px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  background: var(--g-field);
+  color: var(--g-accent);
+}
+
+html:has(.garden-photo-viewer[open]) {
+  overflow: hidden;
+}
+
+.garden-photo-viewer {
+  max-width: min(1200px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--g-line);
+  background: var(--g-field);
+}
+
+.garden-photo-viewer::backdrop {
+  background: rgb(18 34 38 / 76%);
+}
+
+.garden-photo-viewer-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px;
+}
+
+.garden-photo-viewer-bar button {
+  min-width: 52px;
+  min-height: 44px;
+}
+
+.garden-photo-full {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 84px);
+  margin: auto;
+  object-fit: contain;
+}
+
+@media (max-width: 600px) {
+  .garden-cover-trigger {
+    width: 100%;
+  }
 }
