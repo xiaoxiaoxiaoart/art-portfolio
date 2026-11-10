@@ -375,6 +375,11 @@ body.garden-body {
   background: var(--text-muted);
 }
 
+.garden-card-name .garden-status {
+  margin-inline-start: 6px;
+  vertical-align: middle;
+}
+
 .garden-status.healthy {
   color: var(--g-status-healthy);
 }

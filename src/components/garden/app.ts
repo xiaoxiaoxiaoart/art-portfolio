@@ -468,17 +468,19 @@ function cardHtml(p: Plant, latest?: GardenPhoto): string {
     ? `<img class="garden-card-img" src="${escapeHtml(url)}" alt="" loading="lazy" />`
     : '<span class="garden-card-img" aria-hidden="true"></span>';
   const name = escapeHtml(p.name);
-  const content = `${img}<span class="garden-card-name">${name}</span>`;
-  if (albumMode) return `<button type="button" class="garden-card" data-open="${p.id}">${content}</button>`;
+  const status = escapeHtml(p.status === 'healthy' ? checkLabel(p) : statusLabel[p.status]);
+  const tone = p.status === 'healthy' && needsWatering(p) ? 'attention' : p.status;
+  const dot = albumMode ? `<span class="garden-status ${tone}" title="${status}" aria-hidden="true"></span>` : '';
+  const content = `${img}<span class="garden-card-name">${name}${dot}</span>`;
+  const button = `<button type="button" class="garden-card" data-open="${p.id}" aria-label="${name}，${status}">`;
+  if (albumMode) return `${button}${content}</button>`;
 
   const days = daysSince(p.last_watered_at);
-  const status = p.status === 'healthy' ? checkLabel(p) : statusLabel[p.status];
-  const tone = p.status === 'healthy' && needsWatering(p) ? 'attention' : p.status;
   const nextCheck = p.watering_check_at && !needsWatering(p) ? `下次检查 ${fmtDate(p.watering_check_at)}` : '';
   const tag = groupBy === 'zone' ? p.category : p.zone;
   const tagHtml = tag ? `<span class="garden-card-tag">${escapeHtml(tag)}</span>` : '';
-  return `<button type="button" class="garden-card" data-open="${p.id}" aria-label="${name}，${escapeHtml(status)}">
-    ${content}<span class="garden-card-meta"><span class="garden-status ${tone}"><span>${escapeHtml(status)}</span></span></span>
+  return `${button}
+    ${content}<span class="garden-card-meta"><span class="garden-status ${tone}"><span>${status}</span></span></span>
     <span class="garden-card-meta garden-card-extra">${tagHtml}<span>${days === null ? '未记录浇水' : days === 0 ? '今天已浇水' : `${days} 天前浇水`}</span>${nextCheck ? `<span>${nextCheck}</span>` : ''}</span>
   </button>`;
 }
