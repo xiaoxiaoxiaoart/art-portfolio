@@ -53,6 +53,20 @@ let errorMsg: string | null = null;
 let groupBy: 'zone' | 'category' = 'zone';
 let recentCare: { eventId: string; message: string } | null = null;
 let comparedPhotoIds: string[] = [];
+const thumbnailStorageKey = 'garden.thumbnailSize';
+const thumbnailMin = 104;
+const thumbnailMax = 252;
+const thumbnailDefault = 132;
+let thumbnailSize = thumbnailDefault;
+try {
+  const storedSize = Number(window.localStorage.getItem(thumbnailStorageKey));
+  if (Number.isInteger(storedSize) && storedSize >= thumbnailMin && storedSize <= thumbnailMax) {
+    thumbnailSize = storedSize;
+  }
+} catch {
+  // 浏览器禁止本地存储时，仍可在本页调节缩略图。
+}
+
 const identificationStorageKey = 'garden.identificationCode';
 let identificationCode = readRememberedIdentificationCode();
 
@@ -269,7 +283,9 @@ function render(): void {
   const undo = recentCare && view !== 'form'
     ? `<div class="garden-care-feedback"><span role="status">${escapeHtml(recentCare.message)}</span><button type="button" class="garden-btn" data-action="undo-care">撤销</button></div>`
     : '';
+  el.classList.toggle('garden-grid-view', view === 'grid' && !loading && plants.length > 0);
   if (view === 'grid') {
+    el.style.setProperty('--garden-thumbnail-size', `${thumbnailSize}px`);
     el.innerHTML = banner + undo + gridHtml();
     bindGrid(el);
   } else if (view === 'detail' && selected) {
@@ -339,7 +355,13 @@ function gridHtml(): string {
     <span class="garden-error">植物列表加载失败，请重试。</span>
     <button type="button" class="garden-btn" data-action="retry-plants">重新加载</button>
   </div>` : '';
-  return `<div class="garden-toolbar"><h2>我的植物</h2><button class="garden-btn primary" data-action="add">+ 添加植物</button></div>${loadError}${dueHtml}${tabs}${plantLoadFailed && !plants.length ? '' : body}`;
+  const sizeControl = !loading && plants.length ? `<div class="garden-size-control">
+    <label for="garden-thumbnail-size">缩略图大小</label>
+    <span aria-hidden="true">小</span>
+    <input id="garden-thumbnail-size" type="range" min="${thumbnailMin}" max="${thumbnailMax}" value="${thumbnailSize}" />
+    <span aria-hidden="true">大</span>
+  </div>` : '';
+  return `<div class="garden-toolbar"><h2>我的植物</h2><button class="garden-btn primary" data-action="add">+ 添加植物</button></div>${loadError}${dueHtml}${tabs}${plantLoadFailed && !plants.length ? '' : body}${sizeControl}`;
 }
 
 function cardHtml(p: Plant): string {
@@ -536,6 +558,18 @@ function formHtml(): string {
 // ---- 事件绑定 ----
 
 function bindGrid(el: HTMLElement): void {
+  const sizeSlider = el.querySelector<HTMLInputElement>('#garden-thumbnail-size');
+  sizeSlider?.addEventListener('input', () => {
+    thumbnailSize = sizeSlider.valueAsNumber;
+    el.style.setProperty('--garden-thumbnail-size', `${thumbnailSize}px`);
+  });
+  sizeSlider?.addEventListener('change', () => {
+    try {
+      window.localStorage.setItem(thumbnailStorageKey, String(thumbnailSize));
+    } catch {
+      // 此次调整仍保留在当前页面。
+    }
+  });
   el.querySelector('[data-action="retry-plants"]')?.addEventListener('click', () => void refreshGrid());
 
   el.querySelectorAll<HTMLElement>('[data-group]').forEach((tab) => {

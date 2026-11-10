@@ -183,12 +183,48 @@
 /* 植物网格 */
 .garden-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--garden-thumbnail-size, 132px)), 1fr));
   gap: var(--gap);
 }
 
 .garden-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
   cursor: pointer;
+}
+
+.garden-content.garden-grid-view {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}
+
+.garden-size-control {
+  position: fixed;
+  z-index: 2;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: min(360px, calc(100% - 24px));
+  padding: 4px 12px;
+  color: #333;
+  background: #fafafa;
+  border: 1px solid #ccc;
+  font-size: 13px;
+}
+
+.garden-size-control span {
+  color: #555;
+}
+
+.garden-size-control input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  accent-color: #333;
 }
 
 .garden-card-img {
