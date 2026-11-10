@@ -5,8 +5,8 @@ import type {
   EventType,
 } from '../../lib/supabase';
 import { isConfigured } from '../../lib/supabase';
-import { findChinesePlantName, identifyPlant, prepareIdentificationPhoto } from '../../lib/plant-identification';
-import { plantCareProfile } from '../../lib/plant-care';
+import { fetchPlantCare, findChinesePlantName, identifyPlant, prepareIdentificationPhoto } from '../../lib/plant-identification';
+import { plantCareProfile, type PlantCareSuggestions } from '../../lib/plant-care';
 import {
   fetchPlants,
   fetchEvents,
@@ -661,6 +661,22 @@ function bindPlantIdentification(form: HTMLFormElement) {
     'temp_range', 'humidity', 'fertilizer_notes',
   ] as const;
   const autoFilled = new Map<string, string>();
+  function applyCare(profile?: PlantCareSuggestions): number {
+    let filled = 0;
+    for (const key of careFields) {
+      const field = form.elements.namedItem(key) as HTMLInputElement | HTMLTextAreaElement;
+      if (field.value.trim() && field.value !== autoFilled.get(key)) {
+        autoFilled.delete(key);
+        continue;
+      }
+      const value = profile?.[key];
+      field.value = value === undefined ? '' : String(value);
+      autoFilled.set(key, field.value);
+      if (field.value) filled++;
+    }
+    return filled;
+  }
+
   let photoUrl = '';
   let request: AbortController | undefined;
 
@@ -735,26 +751,28 @@ function bindPlantIdentification(form: HTMLFormElement) {
           const fallbackName = candidate.commonName || candidate.scientificName;
           name.value = chineseName || fallbackName;
           species.value = candidate.scientificName;
-          for (const key of careFields) {
-            const field = form.elements.namedItem(key) as HTMLInputElement | HTMLTextAreaElement;
-            if (field.value.trim() && field.value !== autoFilled.get(key)) {
-              autoFilled.delete(key);
-              continue;
-            }
-            field.value = profile ? String(profile[key]) : '';
-            autoFilled.set(key, field.value);
-          }
+          applyCare(profile);
           results.replaceChildren();
-          const summary = profile
-            ? '已填入养护建议。浇水天数是检查提醒，保存前可按盆土和环境调整。'
-            : '暂无该物种的养护资料，可手动填写。';
-          status.textContent = chineseName ? summary : `${summary} 正在查询中文名…`;
           name.focus();
-          if (!chineseName) {
-            const match = await findChinesePlantName(candidate.scientificName, current.signal);
-            if (current.signal.aborted || species.value !== candidate.scientificName) return;
-            if (match && name.value === fallbackName) name.value = match;
-            status.textContent = match ? summary : `${summary} 暂无可核对的中文名。`;
+          if (profile) {
+            status.textContent = '已填入养护建议。浇水天数是检查提醒，保存前可按盆土和环境调整。';
+            return;
+          }
+
+          status.textContent = '正在按学名生成养护建议…';
+          const [referenceName, generated] = await Promise.all([
+            chineseName ? Promise.resolve(undefined) : findChinesePlantName(candidate.scientificName, current.signal),
+            fetchPlantCare(candidate.scientificName, enteredCode, current.signal),
+          ]);
+          if (current.signal.aborted || species.value !== candidate.scientificName) return;
+          const suggestedName = chineseName || referenceName || generated.care?.chineseName;
+          if (suggestedName && name.value === fallbackName) name.value = suggestedName;
+          if (applyCare(generated.care)) {
+            status.textContent = '已填入 DeepSeek 养护建议，请按实际光照和盆土干湿核对后保存。';
+          } else {
+            status.textContent = generated.error === 'care_quota'
+              ? '养护建议服务额度暂不可用，可以手动填写。'
+              : '暂未获取养护建议，可以手动填写。';
           }
         });
         results.append(button);

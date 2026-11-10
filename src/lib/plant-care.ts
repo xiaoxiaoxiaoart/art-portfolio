@@ -9,6 +9,8 @@ interface CareProfile {
   fertilizer_notes: string;
 }
 
+export type PlantCareSuggestions = Partial<CareProfile>;
+
 const foliageFertilizer = '春夏有新生长时，可用半浓度均衡液肥，每 2–4 周一次；生长停缓时暂停。';
 
 // 这组养护建议适用于资料中明确喜少水的两种肉质大戟及其缀化品种。

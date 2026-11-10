@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import type { PlantCareSuggestions } from './plant-care';
 
 export interface PlantCandidate {
   scientificName: string;
@@ -44,6 +45,27 @@ export async function identifyPlant(photo: Blob, code: string, signal: AbortSign
   }
   if (error || !Array.isArray(data?.candidates)) return { error: 'provider' } as const;
   return { candidates: data.candidates };
+}
+
+const careCache = new Map<string, PlantCareSuggestions>();
+
+export async function fetchPlantCare(scientificName: string, code: string, signal: AbortSignal) {
+  const cached = careCache.get(scientificName);
+  if (cached) return { care: cached };
+  if (!supabase) return { error: 'care_unconfigured' };
+  const { data, error } = await supabase.functions.invoke<{ care: PlantCareSuggestions }>('identify-plant', {
+    body: { scientificName },
+    headers: { 'x-garden-identification-code': code },
+    signal,
+    timeout: 19_000,
+  });
+  if (error instanceof FunctionsHttpError) {
+    const body = await error.context.json().catch(() => ({}));
+    return { error: typeof body?.error === 'string' ? body.error : 'care_provider' };
+  }
+  if (error || !data?.care) return { error: 'care_provider' };
+  if (Object.keys(data.care).length) careCache.set(scientificName, data.care);
+  return { care: data.care };
 }
 
 // GBIF 只收到已选候选的学名，用于补齐 Pl@ntNet 未返回的中文名。

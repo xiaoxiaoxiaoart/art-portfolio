@@ -83,6 +83,8 @@ npx supabase functions deploy identify-plant --project-ref <项目引用> --no-v
 
 选中候选后，表单优先填中文名。Pl@ntNet 和内置资料未提供中文名时，前端按学名查询 [GBIF](https://techdocs.gbif.org/en/openapi/v1/species)。常见盆栽的养护建议按学名匹配，参考 [NC State Extension](https://plants.ces.ncsu.edu/) 、[UMN Extension](https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/houseplants/spring-houseplant-care) 和 [新加坡国家公园局植物资料](https://www.nparks.gov.sg/florafaunaweb/)。浇水天数是可编辑的检查提醒起点，表单保留手填的养护值。
 
+为清单以外的植物启用自动养护建议时，在 **Edge Functions → Secrets** 添加 `DEEPSEEK_API_KEY`。已有识别码同样保护这个入口。DeepSeek 只接收选中候选的学名；建议须由用户核对后保存。密钥缺失或服务不可用时，仍可正常识别并手动填写。
+
 ## 6. 测试
 
 - 在 Dashboard 的函数页面点 **Invoke**（或本地 `npx supabase functions serve`），确认微信收到 Server 酱推送。
