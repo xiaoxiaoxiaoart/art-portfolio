@@ -194,36 +194,19 @@
 }
 
 .garden-content.garden-grid-view {
-  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
 }
 
 .garden-size-control {
   position: fixed;
   z-index: 2;
   bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  transform: translateX(-50%);
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  width: min(360px, calc(100% - 24px));
-  padding: 4px 12px;
-  color: #333;
-  background: #fafafa;
-  border: 1px solid #ccc;
-  font-size: 13px;
-}
-
-.garden-size-control span {
-  color: #555;
-}
-
-.garden-size-control input {
-  min-width: 0;
-  width: 100%;
+  /* 水平位置沿用内容区的起点，与植物网格对齐。 */
+  display: block;
+  width: min(220px, calc(100% - 40px));
   min-height: 44px;
   margin: 0;
+  background: transparent;
   accent-color: #333;
 }
 

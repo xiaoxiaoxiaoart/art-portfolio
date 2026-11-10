@@ -355,12 +355,9 @@ function gridHtml(): string {
     <span class="garden-error">植物列表加载失败，请重试。</span>
     <button type="button" class="garden-btn" data-action="retry-plants">重新加载</button>
   </div>` : '';
-  const sizeControl = !loading && plants.length ? `<div class="garden-size-control">
-    <label for="garden-thumbnail-size">缩略图大小</label>
-    <span aria-hidden="true">小</span>
-    <input id="garden-thumbnail-size" type="range" min="${thumbnailMin}" max="${thumbnailMax}" value="${thumbnailSize}" />
-    <span aria-hidden="true">大</span>
-  </div>` : '';
+  const sizeControl = !loading && plants.length
+    ? `<input class="garden-size-control" id="garden-thumbnail-size" aria-label="缩略图大小" type="range" min="${thumbnailMin}" max="${thumbnailMax}" value="${thumbnailSize}" />`
+    : '';
   return `<div class="garden-toolbar"><h2>我的植物</h2><button class="garden-btn primary" data-action="add">+ 添加植物</button></div>${loadError}${dueHtml}${tabs}${plantLoadFailed && !plants.length ? '' : body}${sizeControl}`;
 }
 
