@@ -36,11 +36,13 @@ export async function onRequest({ request }: { request: Request }): Promise<Resp
       : 'select=*&order=created_at.asc';
     const upstream = await fetch(url.toString(), {
       headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' },
-      redirect: 'error',
+      // Workers 使用 manual 禁止自动跟随，避免把公开密钥转发到其他地址。
+      redirect: 'manual',
       signal: AbortSignal.timeout(8_000),
     });
     if (!upstream.ok) {
-      return Response.json({ error: 'garden_upstream_rejected' }, { status: upstream.status, headers: noCache });
+      const status = upstream.status >= 400 ? upstream.status : 502;
+      return Response.json({ error: 'garden_upstream_rejected' }, { status, headers: noCache });
     }
     return Response.json(await upstream.json(), { headers: noCache });
   } catch {
