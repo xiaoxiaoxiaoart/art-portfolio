@@ -53,7 +53,25 @@ let errorMsg: string | null = null;
 let groupBy: 'zone' | 'category' = 'zone';
 let recentCare: { eventId: string; message: string } | null = null;
 let comparedPhotoIds: string[] = [];
-let identificationCode = '';
+const identificationStorageKey = 'garden.identificationCode';
+let identificationCode = readRememberedIdentificationCode();
+
+function readRememberedIdentificationCode(): string {
+  try {
+    return window.localStorage.getItem(identificationStorageKey) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function rememberIdentificationCode(code: string): void {
+  try {
+    if (code) window.localStorage.setItem(identificationStorageKey, code);
+    else window.localStorage.removeItem(identificationStorageKey);
+  } catch {
+    // 浏览器禁止本地存储时，仍可在本页使用已验证的识别码。
+  }
+}
 
 function root(): HTMLElement {
   return document.getElementById('garden-root')!;
@@ -489,7 +507,9 @@ function formHtml(): string {
           <div id="garden-identification-access" class="garden-identification-access" hidden>
             <label for="garden-identification-code">识别码</label>
             <input id="garden-identification-code" type="password" autocomplete="off" maxlength="256" />
+            <label class="garden-remember-code"><input id="garden-identification-remember" type="checkbox" checked /> 记住这台设备</label>
           </div>
+          <button type="button" class="garden-btn small" id="garden-identification-forget" hidden>清除识别码</button>
           <p id="garden-identification-status" class="garden-empty" role="status"></p>
           <button type="button" class="garden-btn" id="garden-identification-retry" hidden>开始识别</button>
           <div id="garden-identification-results" class="garden-identification-results"></div>`}
@@ -651,6 +671,10 @@ function bindPhotoArchive(el: HTMLElement): void {
 function bindPlantIdentification(form: HTMLFormElement) {
   const code = form.querySelector<HTMLInputElement>('#garden-identification-code')!;
   const access = form.querySelector<HTMLElement>('#garden-identification-access')!;
+  const remember = form.querySelector<HTMLInputElement>('#garden-identification-remember')!;
+  const forget = form.querySelector<HTMLButtonElement>('#garden-identification-forget')!;
+  remember.checked = !identificationCode || Boolean(readRememberedIdentificationCode());
+  forget.hidden = !identificationCode;
   const status = form.querySelector<HTMLElement>('#garden-identification-status')!;
   const retry = form.querySelector<HTMLButtonElement>('#garden-identification-retry')!;
   const results = form.querySelector<HTMLElement>('#garden-identification-results')!;
@@ -705,6 +729,8 @@ function bindPlantIdentification(form: HTMLFormElement) {
       if (current.signal.aborted) return;
       if (response.error === 'invalid_code') {
         identificationCode = '';
+        rememberIdentificationCode('');
+        forget.hidden = true;
         code.value = '';
         access.hidden = false;
         retry.hidden = false;
@@ -729,6 +755,8 @@ function bindPlantIdentification(form: HTMLFormElement) {
       }
 
       identificationCode = enteredCode;
+      rememberIdentificationCode(remember.checked ? enteredCode : '');
+      forget.hidden = false;
       code.value = '';
       if (!response.candidates.length) {
         status.textContent = '没有找到匹配的植物。可以换一张叶片或花朵的清晰照片，也可以手填。';
@@ -785,6 +813,16 @@ function bindPlantIdentification(form: HTMLFormElement) {
   }
 
   retry.addEventListener('click', () => void identify());
+  forget.addEventListener('click', () => {
+    request?.abort();
+    identificationCode = '';
+    rememberIdentificationCode('');
+    forget.hidden = true;
+    code.value = '';
+    results.replaceChildren();
+    if (photoUrl) void identify();
+    else status.textContent = '识别码已清除。';
+  });
   code.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();

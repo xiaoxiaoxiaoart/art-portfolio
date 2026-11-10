@@ -72,14 +72,14 @@ schedule = "0 0 * * *"
 ## 5. 启用拍照识别
 
 1. 在 [Pl@ntNet 开发者后台](https://my.plantnet.org/) 获取 API 密钥。
-2. 在本项目 Supabase 后台的 **Edge Functions → Secrets** 添加 `PLANTNET_API_KEY`，并添加 `GARDEN_IDENTIFICATION_CODE` 作为花园的识别码。识别码使用随机值，例如用 `openssl rand -hex 16` 生成。两个值都只存到服务端。
+2. 在本项目 Supabase 后台的 **Edge Functions → Secrets** 添加 `PLANTNET_API_KEY`，并添加 `GARDEN_IDENTIFICATION_CODE` 作为花园的识别码。识别码使用随机值，例如用 `openssl rand -hex 16` 生成。Pl@ntNet 密钥只存到服务端。识别码在服务端校验，用户可以选择让当前浏览器记住它。
 3. 部署 [identify-plant](./functions/identify-plant/index.ts)。在后台将该函数的 **Verify JWT** 关闭，或使用以下命令部署。花园目前没有账户登录，函数会校验识别码，通过后才向 Pl@ntNet 发送照片。
 
 ```sh
 npx supabase functions deploy identify-plant --project-ref <项目引用> --no-verify-jwt
 ```
 
-4. 部署前端。在「添加植物」中拍照或选图，按页面提示输入识别码，选一个候选并检查填入的名称和学名。照片可继续用作封面。此功能无需新增数据库字段或前端环境变量。
+4. 部署前端。在「添加植物」中拍照或选图，按页面提示输入识别码，选一个候选并检查填入的名称和学名。勾选「记住这台设备」后，同一浏览器再次打开页面即可直接识别，也可在表单里清除识别码。照片可继续用作封面。此功能无需新增数据库字段或前端环境变量。
 
 选中候选后，表单优先填中文名。Pl@ntNet 和内置资料未提供中文名时，前端按学名查询 [GBIF](https://techdocs.gbif.org/en/openapi/v1/species)。常见盆栽的养护建议按学名匹配，参考 [NC State Extension](https://plants.ces.ncsu.edu/) 、[UMN Extension](https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/houseplants/spring-houseplant-care) 和 [新加坡国家公园局植物资料](https://www.nparks.gov.sg/florafaunaweb/)。浇水天数是可编辑的检查提醒起点，表单保留手填的养护值。
 

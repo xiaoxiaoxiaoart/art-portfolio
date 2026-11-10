@@ -669,7 +669,15 @@
   width: fit-content;
 }
 
-#garden-identification-retry {
+.garden-remember-code {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+}
+
+#garden-identification-retry,
+#garden-identification-forget {
   align-self: flex-start;
 }
 
