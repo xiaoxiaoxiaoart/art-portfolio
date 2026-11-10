@@ -1,17 +1,31 @@
 interface GardenEnv {
   PUBLIC_SUPABASE_URL?: string;
-  PUBLIC_SUPABASE_ANON_KEY?: string;
 }
 
 const noCache = { 'Cache-Control': 'no-store' };
+
+function isPublicKey(key: string): boolean {
+  if (key.length > 2048) return false;
+  if (/^sb_publishable_[A-Za-z0-9_-]+$/.test(key)) return true;
+
+  // 这里只限制可转发的密钥类型。JWT 签名与项目归属仍由 Supabase 验证。
+  const parts = key.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    const payload = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(payload).role === 'anon';
+  } catch {
+    return false;
+  }
+}
 
 export async function onRequest({ request, env }: { request: Request; env: GardenEnv }): Promise<Response> {
   if (request.method !== 'GET') {
     return new Response(null, { status: 405, headers: { ...noCache, Allow: 'GET' } });
   }
-  const key = env.PUBLIC_SUPABASE_ANON_KEY;
-  if (!env.PUBLIC_SUPABASE_URL || !key) return new Response(null, { status: 503, headers: noCache });
-  if (request.headers.get('apikey') !== key) return new Response(null, { status: 403, headers: noCache });
+  if (!env.PUBLIC_SUPABASE_URL) return new Response(null, { status: 503, headers: noCache });
+  const key = request.headers.get('apikey') ?? '';
+  if (!isPublicKey(key)) return new Response(null, { status: 403, headers: noCache });
 
   const plant = new URL(request.url).searchParams.get('plant');
   if (plant !== null && !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(plant)) {

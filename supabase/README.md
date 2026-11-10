@@ -33,7 +33,7 @@ PUBLIC_SUPABASE_ANON_KEY=xxx
 ```
 
 - 本地开发：`.env` 即可，`npm run dev` 会自动读取。
-- Cloudflare Pages 部署：在项目的环境变量设置中添加同名变量。正式站的 `/garden-api` 只读转发植物列表和养护记录，沿用同一组环境变量和 Supabase 公开权限。
+- Cloudflare Pages 部署：在项目的环境变量设置中添加同名变量。正式站的 `/garden-api` 只读转发植物列表和养护记录，使用该项目的 Supabase 地址，并将页面的公开密钥交给 Supabase 校验。
 
 ## 3. 部署定时推送函数
 
