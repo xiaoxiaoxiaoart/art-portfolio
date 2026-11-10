@@ -1,11 +1,4 @@
-/* 植物养护页面样式 —— 沿用 art-portfolio 设计语言
-   基础变量来自 global.css（黑白灰、--gap 等） */
-
-:root {
-  --g-status-healthy: #5b8a4a;
-  --g-status-attention: #b58900;
-  --g-status-sick: #b04a4a;
-}
+/* 海中花园样式，沿用作品集的布局变量。 */
 
 /* 优先加载常用字，遇到常用字库未收录的字再加载扩展字库。 */
 @font-face {
@@ -25,8 +18,21 @@
 }
 
 body.garden-body {
-  --text-muted: #606d61;
-  background: #edf5ec;
+  --g-background: #eef5ed;
+  --g-blue: #deecf8;
+  --g-panel: #ddebe5;
+  --g-field: #f7fbf8;
+  --g-ink: #293d45;
+  --g-accent: #365967;
+  --g-line: #8fa9a4;
+  --g-divider: #b4ccc2;
+  --g-status-healthy: #355d4b;
+  --g-status-attention: #77521f;
+  --g-status-sick: #843d42;
+  --text-muted: #4b605e;
+  background: var(--g-background);
+  color: var(--g-ink);
+  accent-color: var(--g-accent);
   font-family: 'Garden Sarasa Light', monospace;
   font-weight: 300;
   font-style: normal;
@@ -48,11 +54,13 @@ body.garden-body {
   width: var(--sidebar-width);
   padding: var(--content-padding) 24px;
   flex-shrink: 0;
+  background: var(--g-blue);
+  border-inline-end: 1px solid var(--g-divider);
 }
 
 .garden-title {
   font-size: 30px;
-  color: #111;
+  color: var(--g-ink);
   font-style: normal;
   letter-spacing: 0;
   line-height: 1.3;
@@ -75,37 +83,42 @@ body.garden-body {
 
 .garden-toolbar h2 {
   font-size: 20px;
-  color: #111;
+  color: var(--g-ink);
   font-weight: inherit;
   font-style: normal;
 }
 
-/* 按钮：极简、无圆角、边框 hover 变深 */
+/* 按钮 */
 .garden-btn {
   font-family: inherit;
   font-size: 15px;
   font-style: normal;
   background: none;
-  border: 1px solid #999;
-  color: #333;
+  border: 1px solid var(--g-line);
+  color: var(--g-ink);
   padding: 6px 14px;
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
 }
 
 .garden-btn:hover {
-  color: #111;
-  border-color: #111;
+  border-color: var(--g-accent);
 }
 
 .garden-btn.primary {
-  border-color: #111;
-  color: #111;
+  border-color: var(--g-accent);
+  color: var(--g-accent);
+}
+
+.garden-toolbar .garden-btn.primary,
+.garden-form-actions .garden-btn.primary {
+  background: var(--g-blue);
+  color: #284651;
 }
 
 .garden-btn.primary:hover {
-  background: #111;
-  color: #fafafa;
+  background: var(--g-accent);
+  color: var(--g-field);
 }
 
 .garden-btn.danger:hover {
@@ -120,7 +133,8 @@ body.garden-body {
 
 /* 看板 */
 .garden-dashboard {
-  border: 1px solid #ddd;
+  background: var(--g-panel);
+  border: 1px solid var(--g-line);
   padding: 16px 20px;
   margin-bottom: 32px;
 }
@@ -128,7 +142,7 @@ body.garden-body {
 .garden-dashboard h3 {
   font-size: 16px;
   font-style: normal;
-  color: #111;
+  color: var(--g-ink);
   margin-bottom: 8px;
   font-weight: inherit;
 }
@@ -143,7 +157,7 @@ body.garden-body {
   font-size: 14px;
   font-style: normal;
   font-weight: inherit;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .garden-care-zone ul {
@@ -160,13 +174,13 @@ body.garden-body {
   align-items: center;
   gap: 8px;
   padding: 8px 0;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--g-divider);
 }
 
 .garden-care-feedback {
   margin-bottom: 12px;
   border-top: none;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--g-divider);
   font-size: 14px;
 }
 
@@ -176,7 +190,7 @@ body.garden-body {
   padding: 0;
   border: 0;
   background: none;
-  color: #111;
+  color: var(--g-ink);
   cursor: pointer;
   font: inherit;
   text-align: left;
@@ -228,14 +242,13 @@ body.garden-body {
   min-height: 44px;
   margin: 0;
   background: transparent;
-  accent-color: #333;
 }
 
 .garden-card-img {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
-  background: #eee;
+  background: var(--g-panel);
   transition: opacity 0.2s;
 }
 
@@ -246,7 +259,7 @@ body.garden-body {
 .garden-card-name {
   margin-top: 8px;
   font-size: 16px;
-  color: #111;
+  color: var(--g-ink);
   font-style: normal;
 }
 
@@ -275,7 +288,7 @@ body.garden-body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #999;
+  background: var(--text-muted);
 }
 
 .garden-status.healthy {
@@ -317,7 +330,7 @@ body.garden-body {
   width: 180px;
   height: 180px;
   object-fit: cover;
-  background: #eee;
+  background: var(--g-panel);
   flex-shrink: 0;
 }
 
@@ -329,7 +342,7 @@ body.garden-body {
 
 .garden-detail-title h2 {
   font-size: 26px;
-  color: #111;
+  color: var(--g-ink);
   font-style: normal;
   font-weight: inherit;
 }
@@ -353,7 +366,7 @@ body.garden-body {
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: #333;
+  color: var(--g-ink);
   font-style: normal;
   cursor: pointer;
 }
@@ -373,7 +386,7 @@ body.garden-body {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
-  background: #eee;
+  background: var(--g-panel);
   display: block;
 }
 
@@ -394,7 +407,7 @@ body.garden-body {
 
 .garden-photos time,
 .garden-compare-pair time {
-  color: #555;
+  color: var(--text-muted);
   font-style: normal;
 }
 
@@ -413,7 +426,7 @@ body.garden-body {
 .garden-comparison {
   margin-top: 20px;
   padding-top: 14px;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--g-divider);
 }
 
 .garden-compare-pair {
@@ -433,7 +446,7 @@ body.garden-body {
   justify-items: start;
   margin-bottom: 20px;
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--g-line);
 }
 
 .garden-photo-form label {
@@ -473,7 +486,7 @@ body.garden-body {
 
 .garden-fact {
   font-size: 14px;
-  color: #333;
+  color: var(--g-ink);
   font-style: normal;
 }
 
@@ -500,7 +513,7 @@ body.garden-body {
 
 .garden-event .ev-type {
   font-size: 13px;
-  color: #111;
+  color: var(--g-ink);
   flex-shrink: 0;
   min-width: 44px;
 }
@@ -513,7 +526,7 @@ body.garden-body {
 
 .garden-event .ev-note {
   font-size: 14px;
-  color: #333;
+  color: var(--g-ink);
   flex: 1;
 }
 
@@ -534,7 +547,7 @@ body.garden-body {
   width: 120px;
   height: 120px;
   object-fit: cover;
-  background: #eee;
+  background: var(--g-panel);
 }
 
 .garden-form-photo[hidden] {
@@ -559,9 +572,9 @@ body.garden-body {
   font-family: inherit;
   font-size: 15px;
   font-style: normal;
-  color: #333;
-  background: #fff;
-  border: 1px solid #ddd;
+  color: var(--g-ink);
+  background: var(--g-field);
+  border: 1px solid var(--g-line);
   padding: 8px 10px;
   transition: border-color 0.2s;
 }
@@ -569,8 +582,8 @@ body.garden-body {
 .garden-field input:focus,
 .garden-field select:focus,
 .garden-field textarea:focus {
-  outline: none;
-  border-color: #111;
+  outline: 1px solid var(--g-accent);
+  border-color: var(--g-accent);
 }
 
 .garden-form-actions {
@@ -596,7 +609,7 @@ body.garden-body {
 }
 
 .garden-back:hover {
-  color: #111;
+  color: var(--g-ink);
 }
 
 .garden-error {
@@ -617,20 +630,20 @@ body.garden-body {
   font-size: 14px;
   font-style: normal;
   background: none;
-  border: 1px solid #ddd;
-  color: var(--text-muted);
+  border: 1px solid var(--g-line);
+  color: var(--g-ink);
   padding: 5px 14px;
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
 }
 
 .garden-tab:hover {
-  color: #111;
+  border-color: var(--g-accent);
 }
 
 .garden-tab.active {
-  color: #111;
-  border-color: #111;
+  background: var(--g-blue);
+  border-color: var(--g-accent);
 }
 
 /* 分组 */
@@ -640,7 +653,7 @@ body.garden-body {
 
 .garden-group-title {
   font-size: 15px;
-  color: #111;
+  color: var(--g-ink);
   font-style: normal;
   font-weight: inherit;
   margin-bottom: 12px;
@@ -657,7 +670,7 @@ body.garden-body {
   font-size: 12px;
   font-style: normal;
   color: var(--text-muted);
-  border: 1px solid #ddd;
+  border: 1px solid var(--g-divider);
   padding: 1px 6px;
 }
 
@@ -669,6 +682,8 @@ body.garden-body {
   .garden-sidebar {
     width: 100%;
     padding: 16px 20px;
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--g-divider);
   }
   .garden-content {
     padding: 16px 20px;
@@ -722,7 +737,7 @@ body.garden-body {
 }
 
 #garden-identification-status {
-  color: #555;
+  color: var(--text-muted);
   font-style: normal;
 }
 
