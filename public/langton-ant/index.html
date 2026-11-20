@@ -496,7 +496,7 @@ class Simulation {
       color: cfg.ant, trailColor: cfg.trail, palIdx: idx,
       rule, angle, dirs: DIR_SETS[angle],
       probMode: probMode, probBias, straightProb,
-      speed: 5, state: 0, moves: 0, fadeSteps: 0,
+      speed: 5, state: 0, moves: 0, fadeSteps: 0, trailKeys: new Set(),
     };
   }
 
@@ -507,13 +507,27 @@ class Simulation {
 
   removeAnt(idx) {
     const ant = this.ants[idx];
-    // 移除蚂蚁时结束其限时轨迹，保留格子供其他蚂蚁读取。
-    if (ant.fadeSteps) ant.moves = Infinity;
+    if (ant.fadeSteps) {
+      for (const key of ant.trailKeys) this.cells.delete(key);
+      ant.trailKeys.clear();
+    }
     this.ants.splice(idx, 1);
     this.numAnts = this.ants.length;
   }
 
+  expireTrails(ant) {
+    if (!ant.fadeSteps) return;
+    const cutoff = ant.moves - 2 * ant.fadeSteps;
+    // 格子按最近一次写入的顺序排列，遇到未到期的即可停止。
+    for (const key of ant.trailKeys) {
+      if (this.cells.get(key).writtenAt > cutoff) break;
+      this.cells.delete(key);
+      ant.trailKeys.delete(key);
+    }
+  }
+
   clearCells() {
+    for (const ant of this.ants) ant.trailKeys.clear();
     this.cells.clear();
     this.steps = 0;
   }
@@ -535,7 +549,8 @@ class Simulation {
 
       for (let s = 0; s < loops; s++) {
         const key = `${ant.x},${ant.y}`;
-        const cellState = this.cells.get(key)?.s || 0;
+        const previous = this.cells.get(key);
+        const cellState = previous?.s || 0;
 
         let turn, numCellColors, nextCell, nextAntState;
         if (isGod) {
@@ -597,8 +612,14 @@ class Simulation {
         }
 
         ant.moves++;
-        if (nextCell === 0) this.cells.delete(key);
-        else this.cells.set(key, { s: nextCell, c: ant.trailColor, ant, writtenAt: ant.moves });
+        previous?.ant.trailKeys.delete(key);
+        if (nextCell === 0) {
+          this.cells.delete(key);
+        } else {
+          this.cells.set(key, { s: nextCell, c: ant.trailColor, ant, writtenAt: ant.moves });
+          ant.trailKeys.add(key);
+        }
+        this.expireTrails(ant);
 
         if (isGod) ant.state = nextAntState;
 
@@ -745,7 +766,6 @@ function draw2D(W, H) {
   for (const [key, val] of sim.cells) {
     const limit = val.ant.fadeSteps;
     const age = val.ant.moves - val.writtenAt;
-    if (limit && age >= 2 * limit) continue;
     const [gx, gy] = key.split(',').map(Number);
     if (gx < gx0 - 1 || gx > gx1 + 1 || gy < gy0 - 1 || gy > gy1 + 1) continue;
     const { sx, sy } = gridToScreen(gx, gy);
@@ -990,12 +1010,13 @@ function rebuildAntRows() {
     fadeInput.value = ant.fadeSteps || '';
     fadeInput.placeholder = '关';
     fadeInput.setAttribute('aria-label', '蚂蚁 ' + (i + 1) + ' 的轨迹变淡步数');
-    fadeLabel.title = '留空或填 0 可关闭。到达设定步数开始变淡，再走相同步数后消失。';
+    fadeLabel.title = '留空或填 0 可关闭。到达设定步数开始变淡，再走相同步数后消失，格子恢复为空白。';
     fadeLabel.append('走过', fadeInput, '步后轨迹变淡');
     fadeInput.addEventListener('input', () => {
       const steps = Number(fadeInput.value);
       if (fadeInput.validity.valid && Number.isSafeInteger(steps) && steps >= 0) {
         ant.fadeSteps = steps;
+        sim.expireTrails(ant);
         draw();
       }
     });
