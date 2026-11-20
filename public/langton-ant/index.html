@@ -102,6 +102,7 @@
     transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
     display: flex; align-items: center; gap: 24px;
     flex-wrap: wrap; font-style: normal;
+    max-height: 85vh; overflow-y: auto;
   }
   .panel.open { transform: translateY(0); }
 
@@ -345,7 +346,7 @@ function exportSandbox() {
       rule: a.rule, angle: a.angle, palIdx: a.palIdx,
       probMode: a.probMode, probBias: a.probBias,
       straightProb: a.straightProb, speed: a.speed,
-      x: a.x, y: a.y, dir: a.dir,
+      x: a.x, y: a.y, dir: a.dir, fadeSteps: a.fadeSteps,
     })),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -392,6 +393,7 @@ function importSandbox(file) {
         a.color = cfg.ant; a.trailColor = cfg.trail;
         a.probMode = ad.probMode; a.probBias = ad.probBias;
         a.straightProb = ad.straightProb; a.speed = ad.speed || 5;
+        a.fadeSteps = Number.isSafeInteger(ad.fadeSteps) && ad.fadeSteps > 0 ? ad.fadeSteps : 0;
         a.x = ad.x; a.y = ad.y; a.dir = ad.dir;
         sim.ants.push(a);
       }
@@ -494,7 +496,7 @@ class Simulation {
       color: cfg.ant, trailColor: cfg.trail, palIdx: idx,
       rule, angle, dirs: DIR_SETS[angle],
       probMode: probMode, probBias, straightProb,
-      speed: 5, state: 0,
+      speed: 5, state: 0, moves: 0, fadeSteps: 0,
     };
   }
 
@@ -504,6 +506,9 @@ class Simulation {
   }
 
   removeAnt(idx) {
+    const ant = this.ants[idx];
+    // 移除蚂蚁时结束其限时轨迹，保留格子供其他蚂蚁读取。
+    if (ant.fadeSteps) ant.moves = Infinity;
     this.ants.splice(idx, 1);
     this.numAnts = this.ants.length;
   }
@@ -530,8 +535,7 @@ class Simulation {
 
       for (let s = 0; s < loops; s++) {
         const key = `${ant.x},${ant.y}`;
-        const raw = this.cells.get(key);
-        const cellState = (this.mode !== 'classic' && raw && typeof raw === 'object') ? raw.s : (raw || 0);
+        const cellState = this.cells.get(key)?.s || 0;
 
         let turn, numCellColors, nextCell, nextAntState;
         if (isGod) {
@@ -592,9 +596,9 @@ class Simulation {
           ant.dir = goRight ? (ant.dir + 1) % N : (ant.dir + N - 1) % N;
         }
 
+        ant.moves++;
         if (nextCell === 0) this.cells.delete(key);
-        else if (this.mode !== 'classic') this.cells.set(key, { s: nextCell, c: ant.trailColor });
-        else this.cells.set(key, nextCell);
+        else this.cells.set(key, { s: nextCell, c: ant.trailColor, ant, writtenAt: ant.moves });
 
         if (isGod) ant.state = nextAntState;
 
@@ -607,6 +611,7 @@ class Simulation {
   }
 
   reset(mode, rule, numAnts, worldW, worldH, angle) {
+    const fadeSteps = mode === this.mode ? this.ants.map(ant => ant.fadeSteps) : [];
     if (mode !== undefined) this.mode = mode;
     if (rule !== undefined) { this.rule = rule; this.numStates = rule.length; }
     if (numAnts !== undefined) this.numAnts = numAnts;
@@ -616,6 +621,7 @@ class Simulation {
     this.cells.clear();
     this.steps = 0;
     this._initAnts();
+    this.ants.forEach((ant, i) => { ant.fadeSteps = fadeSteps[i] || 0; });
   }
 }
 
@@ -737,17 +743,22 @@ function draw2D(W, H) {
   const { gx: gx1, gy: gy1 } = screenToGrid(W, H);
 
   for (const [key, val] of sim.cells) {
+    const limit = val.ant.fadeSteps;
+    const age = val.ant.moves - val.writtenAt;
+    if (limit && age >= 2 * limit) continue;
     const [gx, gy] = key.split(',').map(Number);
     if (gx < gx0 - 1 || gx > gx1 + 1 || gy < gy0 - 1 || gy > gy1 + 1) continue;
     const { sx, sy } = gridToScreen(gx, gy);
-    if (sim.mode !== 'classic' && val && typeof val === 'object') {
+    ctx.globalAlpha = limit && age >= limit ? (2 * limit - age) / (limit + 1) : 1;
+    if (sim.mode !== 'classic') {
       ctx.fillStyle = trailVariant(val.c, val.s, sim.numStates);
     } else {
-      ctx.fillStyle = stateColors[val] || '#2d2d2d';
+      ctx.fillStyle = stateColors[val.s] || '#2d2d2d';
     }
     ctx.fillRect(sx, sy, cellSize, cellSize);
   }
 
+  ctx.globalAlpha = 1;
   ctx.strokeStyle = '#e8e8e8'; ctx.lineWidth = 0.5;
   for (let gx = gx0 - 1; gx <= gx1 + 1; gx++) {
     const { sx } = gridToScreen(gx, 0);
@@ -825,6 +836,7 @@ function reset() {
     rebuildAntRows();
   } else {
     sim.reset(sim.mode, sim.rule, sim.numAnts, sim.worldW, sim.worldH);
+    rebuildAntRows();
   }
   offsetX = -Math.floor(sim.worldW / 2) * cellSize;
   offsetY = -Math.floor(sim.worldH / 2) * cellSize;
@@ -866,7 +878,6 @@ function applyConfig() {
   if (isSandbox && sim.mode !== mode) {
     sim.reset(mode, rule, 0, worldW, worldH, angle);
     inpAnts.value = 0; antsLabel.textContent = '0';
-    rebuildAntRows();
   } else if (isSandbox) {
     sim.mode = mode;
     sim.rule = rule;
@@ -876,6 +887,7 @@ function applyConfig() {
     const antCount = (mode === 'multi-ant') ? numAnts : 1;
     sim.reset(mode, rule, antCount, worldW, worldH, angle);
   }
+  rebuildAntRows();
   cellSize = 8;
   cellSizeInput.value = cellSize;
   cellSizeLabel.textContent = cellSize;
@@ -922,6 +934,7 @@ inpRule.addEventListener('input', () => {
       sim.rule = raw;
       sim.numStates = raw.length;
       sim.reset(sim.mode, sim.rule, sim.numAnts, sim.worldW, sim.worldH, sim.angle);
+      rebuildAntRows();
       draw();
     }
   }
@@ -969,7 +982,27 @@ function rebuildAntRows() {
     // 颜色圆点
     const dot = document.createElement('span'); dot.className = 'ant-dot';
     dot.style.background = ant.color;
-    row.appendChild(dot);
+    row.append(dot, LABEL('蚂蚁 ' + (i + 1)));
+    const fadeLabel = document.createElement('label');
+    const fadeInput = document.createElement('input');
+    fadeInput.type = 'number'; fadeInput.min = '0'; fadeInput.step = '1';
+    fadeInput.className = 'rule-input';
+    fadeInput.value = ant.fadeSteps || '';
+    fadeInput.placeholder = '关';
+    fadeInput.setAttribute('aria-label', '蚂蚁 ' + (i + 1) + ' 的轨迹变淡步数');
+    fadeLabel.title = '留空或填 0 可关闭。到达设定步数开始变淡，再走相同步数后消失。';
+    fadeLabel.append('走过', fadeInput, '步后轨迹变淡');
+    fadeInput.addEventListener('input', () => {
+      const steps = Number(fadeInput.value);
+      if (fadeInput.validity.valid && Number.isSafeInteger(steps) && steps >= 0) {
+        ant.fadeSteps = steps;
+        draw();
+      }
+    });
+    fadeInput.addEventListener('blur', () => { fadeInput.value = ant.fadeSteps || ''; });
+    row.appendChild(fadeLabel);
+    antRows.appendChild(row);
+    if (sim.mode !== 'sandbox' && sim.mode !== 'god') continue;
 
     // 规则
     row.appendChild(LABEL('规则'));
@@ -1030,8 +1063,6 @@ function rebuildAntRows() {
     del.textContent = '×';
     del.addEventListener('click', () => { sim.removeAnt(i); rebuildAntRows(); draw(); });
     row.appendChild(del);
-
-    antRows.appendChild(row);
   }
 
   antRows.style.display = '';
@@ -1141,7 +1172,7 @@ window.addEventListener('mouseup', (e) => {
     sim.addAnt(gx, gy, rule);
     inpAnts.value = sim.numAnts;
     antsLabel.textContent = sim.numAnts;
-    if (sim.mode === 'sandbox' || sim.mode === 'god') rebuildAntRows();
+    rebuildAntRows();
     exitPlaceMode();
     draw();
   }
